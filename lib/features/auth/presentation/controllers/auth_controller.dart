@@ -176,6 +176,71 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  // Forgot Password
+  Future<bool> forgotPassword(String correo) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final request = ForgotPasswordRequest(correo: correo);
+      final response = await _remoteDataSource.forgotPassword(request);
+
+      _isLoading = false;
+      final detail = response.detail;
+      if (response.debugCode != null) {
+        _successMessage = '$detail (Código dev: ${response.debugCode})';
+      } else {
+        _successMessage = detail;
+      }
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Ocurrió un error inesperado al solicitar el código.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Reset Password
+  Future<bool> resetPassword(String correo, String codigo, String nuevaPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final request = ResetPasswordRequest(
+        correo: correo,
+        codigo: codigo,
+        nuevaPassword: nuevaPassword,
+      );
+      await _remoteDataSource.resetPassword(request);
+
+      _isLoading = false;
+      _successMessage = 'Contraseña restablecida exitosamente. Por favor inicia sesión.';
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Ocurrió un error inesperado al restablecer la contraseña.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Logout
   Future<void> logout() async {
     await _storageService.clearSession();

@@ -45,4 +45,23 @@ class AuthRemoteDataSource {
     );
     return TokenResponse.fromJson(response as Map<String, dynamic>);
   }
+
+  // Forgot Password
+  Future<ForgotPasswordResponse> forgotPassword(ForgotPasswordRequest request) async {
+    final response = await _apiClient.post(
+      ApiConfig.forgotPasswordUrl,
+      body: request.toJson(),
+      includeAuth: false,
+    );
+    return ForgotPasswordResponse.fromJson(response as Map<String, dynamic>);
+  }
+
+  // Reset Password
+  Future<void> resetPassword(ResetPasswordRequest request) async {
+    await _apiClient.post(
+      ApiConfig.resetPasswordUrl,
+      body: request.toJson(),
+      includeAuth: false,
+    );
+  }
 }

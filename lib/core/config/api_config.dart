@@ -20,6 +20,8 @@ class ApiConfig {
   static String get registerUrl => '$baseUrl/auth/register';
   static String get meUrl => '$baseUrl/auth/me';
   static String get refreshUrl => '$baseUrl/auth/refresh';
+  static String get forgotPasswordUrl => '$baseUrl/auth/forgot-password';
+  static String get resetPasswordUrl => '$baseUrl/auth/reset-password';
 
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);

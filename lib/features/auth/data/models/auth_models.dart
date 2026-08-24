@@ -113,3 +113,48 @@ class UserModel {
     'estado': estado,
   };
 }
+
+class ForgotPasswordRequest {
+  final String correo;
+
+  ForgotPasswordRequest({required this.correo});
+
+  Map<String, dynamic> toJson() => {
+    'correo': correo.trim(),
+  };
+}
+
+class ResetPasswordRequest {
+  final String correo;
+  final String codigo;
+  final String nuevaPassword;
+
+  ResetPasswordRequest({
+    required this.correo,
+    required this.codigo,
+    required this.nuevaPassword,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'correo': correo.trim(),
+    'codigo': codigo,
+    'nueva_password': nuevaPassword,
+  };
+}
+
+class ForgotPasswordResponse {
+  final String detail;
+  final String? debugCode;
+
+  ForgotPasswordResponse({
+    required this.detail,
+    this.debugCode,
+  });
+
+  factory ForgotPasswordResponse.fromJson(Map<String, dynamic> json) {
+    return ForgotPasswordResponse(
+      detail: json['detail'] ?? '',
+      debugCode: json['debug_code'] ?? json['debugCode'],
+    );
+  }
+}
