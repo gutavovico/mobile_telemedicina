@@ -106,98 +106,102 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Welcome Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          user != null && user.nombres.isNotEmpty
-                              ? user.nombres.substring(0, 1).toUpperCase()
-                              : 'P',
-                          style: AppTypography.titleLarge.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '¡Hola, ${user?.nombres ?? "Paciente"}!',
-                              style: AppTypography.titleLarge.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              user?.correo ?? '',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          user?.rolNombre?.toUpperCase() ?? 'PACIENTE',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
+            InkWell(
+              onTap: () => Navigator.of(context).pushNamed('/patient-profile'),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
                     ),
-                    child: Row(
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        const Icon(Icons.check_circle_rounded, color: AppColors.secondaryContainer, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
+                        CircleAvatar(
+                          radius: 26,
+                          backgroundColor: Colors.white,
                           child: Text(
-                            'Tu sesión se encuentra activa y segura.',
-                            style: AppTypography.bodySmall.copyWith(color: Colors.white),
+                            user != null && user.nombres.isNotEmpty
+                                ? user.nombres.substring(0, 1).toUpperCase()
+                                : 'P',
+                            style: AppTypography.titleLarge.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '¡Hola, ${user?.nombres ?? "Paciente"}!',
+                                style: AppTypography.titleLarge.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                user?.correo ?? '',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            user?.rolNombre?.toUpperCase() ?? 'PACIENTE',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.primaryDark,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.badge_outlined, color: AppColors.secondaryContainer, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Ver y gestionar mi expediente clínico >',
+                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -218,23 +222,23 @@ class HomeScreen extends StatelessWidget {
               childAspectRatio: 1.15,
               children: [
                 _buildServiceCard(
+                  icon: Icons.person_outline_rounded,
+                  title: 'Mi Expediente',
+                  subtitle: 'Datos clínicos y contacto',
+                  color: AppColors.primary,
+                  onTap: () => Navigator.of(context).pushNamed('/patient-profile'),
+                ),
+                _buildServiceCard(
                   icon: Icons.video_call_rounded,
                   title: 'Teleconsultas',
                   subtitle: 'Atención virtual en tiempo real',
-                  color: AppColors.primary,
+                  color: AppColors.secondary,
                   onTap: () {},
                 ),
                 _buildServiceCard(
                   icon: Icons.calendar_month_rounded,
                   title: 'Mis Citas',
                   subtitle: 'Historial y reservas',
-                  color: AppColors.secondary,
-                  onTap: () {},
-                ),
-                _buildServiceCard(
-                  icon: Icons.medical_services_rounded,
-                  title: 'Recetas Médicas',
-                  subtitle: 'Prescripciones digitales',
                   color: const Color(0xFF0284C7),
                   onTap: () {},
                 ),
