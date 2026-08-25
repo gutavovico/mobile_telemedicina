@@ -7,6 +7,8 @@ import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/home/presentation/screens/home_screen.dart';
+import 'features/medical_records/presentation/providers/patient_provider.dart';
+import 'features/medical_records/presentation/screens/patient_profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +33,7 @@ class TelemedicinaApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthController()),
+        ChangeNotifierProvider(create: (_) => PatientProvider()),
       ],
       child: MaterialApp(
         title: 'Hospital San Juan de Dios - Telemedicina',
@@ -42,6 +45,7 @@ class TelemedicinaApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
+          '/patient-profile': (context) => const PatientProfileScreen(),
         },
       ),
     );

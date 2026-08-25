@@ -21,6 +21,10 @@ class ApiConfig {
   static String get meUrl => '$baseUrl/auth/me';
   static String get refreshUrl => '$baseUrl/auth/refresh';
 
+  // Pacientes endpoints (CU03)
+  static String get patientsUrl => '$baseUrl/api/v1/pacientes';
+  static String get myPatientProfileUrl => '$baseUrl/api/v1/pacientes/me';
+
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
 }
