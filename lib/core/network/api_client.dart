@@ -27,6 +27,11 @@ class ApiClient {
       }
     }
 
+    final tenantId = await _storage.getTenantId();
+    if (tenantId != null && tenantId.isNotEmpty) {
+      headers['X-Tenant-ID'] = tenantId;
+    }
+
     if (extraHeaders != null) {
       headers.addAll(extraHeaders);
     }
@@ -147,6 +152,10 @@ class ApiClient {
         throw ApiException(message: errorMessage, statusCode: 400, details: decodedBody);
       case 401:
         throw UnauthorizedException(errorMessage);
+      case 403:
+        throw ForbiddenException(errorMessage);
+      case 404:
+        throw NotFoundException(errorMessage);
       case 422:
         throw ValidationException(errorMessage, details: decodedBody);
       case 500:

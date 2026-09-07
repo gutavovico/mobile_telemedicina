@@ -64,4 +64,16 @@ class AuthRemoteDataSource {
       includeAuth: false,
     );
   }
+
+  // Logout (CU24)
+  Future<void> logout() async {
+    try {
+      await _apiClient.post(
+        '${ApiConfig.baseUrl}/auth/logout',
+        includeAuth: true,
+      );
+    } catch (_) {
+      // Si el servidor falla o ya expiró, continuar con el logout local
+    }
+  }
 }

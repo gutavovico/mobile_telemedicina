@@ -1,3 +1,5 @@
+import '../../domain/entities/user_entity.dart';
+
 class LoginRequest {
   final String correo;
   final String password;
@@ -46,11 +48,13 @@ class TokenResponse {
   final String accessToken;
   final String? refreshToken;
   final String tokenType;
+  final String? tenantId;
 
   TokenResponse({
     required this.accessToken,
     this.refreshToken,
     this.tokenType = 'bearer',
+    this.tenantId,
   });
 
   factory TokenResponse.fromJson(Map<String, dynamic> json) {
@@ -58,30 +62,22 @@ class TokenResponse {
       accessToken: json['access_token'] ?? json['accessToken'] ?? '',
       refreshToken: json['refresh_token'] ?? json['refreshToken'],
       tokenType: json['token_type'] ?? 'bearer',
+      tenantId: json['tenant_id']?.toString(),
     );
   }
 }
 
-class UserModel {
-  final int idUsuario;
-  final String nombres;
-  final String apellidos;
-  final String correo;
-  final String? telefono;
-  final int? idRol;
-  final String? rolNombre;
-  final dynamic estado;
-
+class UserModel extends UserEntity {
   UserModel({
-    required this.idUsuario,
-    required this.nombres,
-    required this.apellidos,
-    required this.correo,
-    this.telefono,
-    this.idRol,
-    this.rolNombre,
-    this.estado,
-  });
+    required super.idUsuario,
+    required super.nombres,
+    required super.apellidos,
+    required super.correo,
+    super.telefono,
+    super.idRol,
+    super.rolNombre,
+    dynamic estado,
+  }) : super(estado: estado?.toString());
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 

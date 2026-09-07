@@ -27,6 +27,10 @@ class ApiConfig {
   static String get patientsUrl => '$baseUrl/api/v1/pacientes';
   static String get myPatientProfileUrl => '$baseUrl/api/v1/pacientes/me';
 
+  // Médicos y Especialidades endpoints (CU04)
+  static String get doctorsUrl => '$baseUrl/api/v1/medicos';
+  static String get specialtiesUrl => '$baseUrl/api/v1/especialidades';
+
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
 }

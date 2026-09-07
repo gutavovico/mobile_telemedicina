@@ -104,6 +104,10 @@ class AuthController extends ChangeNotifier {
       final request = LoginRequest(correo: correo, password: password);
       final tokenResponse = await _remoteDataSource.login(request);
 
+      if (tokenResponse.tenantId != null && tokenResponse.tenantId!.isNotEmpty) {
+        await _storageService.saveTenantId(tokenResponse.tenantId!);
+      }
+
       if (rememberMe) {
         await _storageService.saveTokens(
           accessToken: tokenResponse.accessToken,
@@ -243,6 +247,11 @@ class AuthController extends ChangeNotifier {
 
   // Logout
   Future<void> logout() async {
+    try {
+      await _remoteDataSource.logout();
+    } catch (_) {
+      // Best-effort remote token invalidation
+    }
     await _storageService.clearSession();
     _currentUser = null;
     _errorMessage = null;

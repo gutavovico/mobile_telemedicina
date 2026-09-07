@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../data/models/patient_model.dart';
+import '../../domain/entities/patient_entity.dart';
 import '../providers/patient_provider.dart';
 
 class EditPatientProfileScreen extends StatefulWidget {
-  final PatientModel patient;
+  final PatientEntity patient;
 
   const EditPatientProfileScreen({super.key, required this.patient});
 
