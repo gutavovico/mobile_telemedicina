@@ -78,6 +78,74 @@ class ApiClient {
     }
   }
 
+  Future<dynamic> patch(String url, {dynamic body, bool includeAuth = true}) async {
+    try {
+      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final response = await _client
+          .patch(
+            Uri.parse(url),
+            headers: headers,
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(ApiConfig.timeoutDuration);
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw NetworkException();
+    } on TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw NetworkException('Error de comunicación: ${e.toString()}');
+    }
+  }
+
+  Future<dynamic> put(String url, {dynamic body, bool includeAuth = true}) async {
+    try {
+      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final response = await _client
+          .put(
+            Uri.parse(url),
+            headers: headers,
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(ApiConfig.timeoutDuration);
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw NetworkException();
+    } on TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw NetworkException('Error de comunicación: ${e.toString()}');
+    }
+  }
+
+  Future<dynamic> delete(String url, {bool includeAuth = true}) async {
+    try {
+      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final response = await _client
+          .delete(Uri.parse(url), headers: headers)
+          .timeout(ApiConfig.timeoutDuration);
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw NetworkException();
+    } on TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw NetworkException('Error de comunicación: ${e.toString()}');
+    }
+  }
+
   dynamic _handleResponse(http.Response response) {
     dynamic decodedBody;
     try {
