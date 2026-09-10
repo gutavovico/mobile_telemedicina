@@ -222,6 +222,27 @@ class HomeScreen extends StatelessWidget {
               childAspectRatio: 1.15,
               children: [
                 _buildServiceCard(
+                  icon: Icons.assignment_outlined,
+                  title: 'Fichas Médicas',
+                  subtitle: 'Emisión y turnos CU09',
+                  color: const Color(0xFF0D9488),
+                  onTap: () => Navigator.of(context).pushNamed('/fichas'),
+                ),
+                _buildServiceCard(
+                  icon: Icons.folder_shared_outlined,
+                  title: 'Documentos',
+                  subtitle: 'Recetas y laboratorios CU12',
+                  color: const Color(0xFF2563EB),
+                  onTap: () => Navigator.of(context).pushNamed('/documentos'),
+                ),
+                _buildServiceCard(
+                  icon: Icons.calendar_month_rounded,
+                  title: 'Mis Citas',
+                  subtitle: 'Consultas agendadas CU25',
+                  color: const Color(0xFFE11D48),
+                  onTap: () => Navigator.of(context).pushNamed('/appointments'),
+                ),
+                _buildServiceCard(
                   icon: Icons.person_outline_rounded,
                   title: 'Mi Expediente',
                   subtitle: 'Datos clínicos y contacto',
@@ -231,7 +252,7 @@ class HomeScreen extends StatelessWidget {
                 _buildServiceCard(
                   icon: Icons.medical_services_outlined,
                   title: 'Directorio Médico',
-                  subtitle: 'Especialistas y citas',
+                  subtitle: 'Especialistas y catálogo',
                   color: const Color(0xFF0284C7),
                   onTap: () => Navigator.of(context).pushNamed('/doctors'),
                 ),

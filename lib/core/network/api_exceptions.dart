@@ -38,6 +38,11 @@ class NotFoundException extends ApiException {
       : super(message: message, statusCode: 404);
 }
 
+class ConflictException extends ApiException {
+  ConflictException([String message = 'Conflicto: El recurso o turno ya se encuentra reservado u ocupado.'])
+      : super(message: message, statusCode: 409);
+}
+
 class ValidationException extends ApiException {
   ValidationException(String message, {super.details})
       : super(message: message, statusCode: 422);

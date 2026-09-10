@@ -31,6 +31,18 @@ class ApiConfig {
   static String get doctorsUrl => '$baseUrl/api/v1/medicos';
   static String get specialtiesUrl => '$baseUrl/api/v1/especialidades';
 
+  // Citas y Consultas (Appointments - CU25)
+  static String get appointmentsUrl => '$baseUrl/citas';
+  static String get availableSlotsUrl => '$baseUrl/citas/horarios-disponibles';
+
+  // Fichas Clínicas (Medical Records - CU09)
+  static String get fichasUrl => '$baseUrl/medical-records/fichas';
+
+  // Documentos Clínicos (Medical Records - CU12)
+  static String get myDocumentsUrl => '$baseUrl/api/v1/documentos/me';
+  static String documentDetailUrl(int id) => '$baseUrl/api/v1/documentos/$id';
+  static String documentDownloadUrl(int id) => '$baseUrl/api/v1/documentos/$id/download';
+
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
 }

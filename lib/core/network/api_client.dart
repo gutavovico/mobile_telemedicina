@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../storage/secure_storage_service.dart';
 import 'api_exceptions.dart';
+import 'api_client_interface.dart';
 import '../config/api_config.dart';
 
-class ApiClient {
+class ApiClient implements ApiClientInterface {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
   ApiClient._internal();
@@ -39,9 +41,13 @@ class ApiClient {
     return headers;
   }
 
-  Future<dynamic> get(String url, {bool includeAuth = true}) async {
+  @override
+  Future<dynamic> get(String url, {bool includeAuth = true, String? authToken}) async {
     try {
       final headers = await _buildHeaders(includeAuth: includeAuth);
+      if (authToken != null && authToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $authToken';
+      }
       final response = await _client
           .get(Uri.parse(url), headers: headers)
           .timeout(ApiConfig.timeoutDuration);
@@ -56,6 +62,41 @@ class ApiClient {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw NetworkException('Error de comunicación: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
+    try {
+      final headers = await _buildHeaders(includeAuth: includeAuth);
+      headers['Accept'] = '*/*';
+      final response = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(ApiConfig.timeoutDuration);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response.bodyBytes;
+      }
+
+      dynamic decodedBody;
+      try {
+        if (response.body.isNotEmpty) {
+          decodedBody = jsonDecode(utf8.decode(response.bodyBytes));
+        }
+      } catch (_) {
+        decodedBody = response.body;
+      }
+      final errorMessage = _extractErrorMessage(decodedBody, response.statusCode);
+      throw ApiException(message: errorMessage, statusCode: response.statusCode);
+    } on SocketException {
+      throw NetworkException();
+    } on TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw NetworkException('Error al descargar archivo: ${e.toString()}');
     }
   }
 
@@ -131,6 +172,26 @@ class ApiClient {
     }
   }
 
+  Future<dynamic> delete(String url, {bool includeAuth = true}) async {
+    try {
+      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final response = await _client
+          .delete(Uri.parse(url), headers: headers)
+          .timeout(ApiConfig.timeoutDuration);
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw NetworkException();
+    } on TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw NetworkException('Error de comunicación: ${e.toString()}');
+    }
+  }
+
   dynamic _handleResponse(http.Response response) {
     dynamic decodedBody;
     try {
@@ -156,6 +217,8 @@ class ApiClient {
         throw ForbiddenException(errorMessage);
       case 404:
         throw NotFoundException(errorMessage);
+      case 409:
+        throw ConflictException(errorMessage);
       case 422:
         throw ValidationException(errorMessage, details: decodedBody);
       case 500:
