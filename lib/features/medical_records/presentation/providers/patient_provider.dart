@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
-import '../../data/models/patient_model.dart';
-import '../../data/services/patient_service.dart';
 import '../../../../core/network/api_exceptions.dart';
+import '../../data/repositories/patient_repository_impl.dart';
+import '../../domain/entities/patient_entity.dart';
+import '../../domain/usecases/get_patient_profile_usecase.dart';
+import '../../domain/usecases/update_patient_profile_usecase.dart';
 
 class PatientProvider extends ChangeNotifier {
-  final PatientService _patientService = PatientService();
+  final GetPatientProfileUseCase _getPatientProfileUseCase;
+  final UpdatePatientProfileUseCase _updatePatientProfileUseCase;
 
-  PatientModel? _currentPatient;
+  PatientProvider({
+    GetPatientProfileUseCase? getPatientProfileUseCase,
+    UpdatePatientProfileUseCase? updatePatientProfileUseCase,
+  })  : _getPatientProfileUseCase = getPatientProfileUseCase ??
+            GetPatientProfileUseCase(PatientRepositoryImpl()),
+        _updatePatientProfileUseCase = updatePatientProfileUseCase ??
+            UpdatePatientProfileUseCase(PatientRepositoryImpl());
+
+  PatientEntity? _currentPatient;
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
 
-  PatientModel? get currentPatient => _currentPatient;
+  PatientEntity? get currentPatient => _currentPatient;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
@@ -29,7 +40,7 @@ class PatientProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _currentPatient = await _patientService.getMyPatientProfile();
+      _currentPatient = await _getPatientProfileUseCase();
       _isLoading = false;
       notifyListeners();
     } on ApiException catch (e) {
@@ -82,7 +93,7 @@ class PatientProvider extends ChangeNotifier {
     }
 
     try {
-      _currentPatient = await _patientService.updateMyPatientProfile(patchData);
+      _currentPatient = await _updatePatientProfileUseCase(patchData);
       _isLoading = false;
       _successMessage = 'Datos de contacto y emergencia actualizados con éxito.';
       notifyListeners();

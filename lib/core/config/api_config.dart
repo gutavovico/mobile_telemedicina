@@ -4,15 +4,15 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class ApiConfig {
   static String get baseUrl {
     if (kIsWeb) {
-      // 127.0.0.1 Web
-      return 'http://192.168.100.30:8000';
+      // Backend local para desarrollo Web (Edge / Chrome)
+      return 'http://127.0.0.1:8000';
     }
     if (Platform.isAndroid) {
       // 10.0.2.2 points to host machine loopback in Android Emulator
-      return 'http://192.168.100.30:8000';
+      return 'https://backend-telemedicina.onrender.com';
     }
     // 127.0.0.1 iOS simulator / Desktop / Physical device (can be changed to LAN IP)
-    return 'http://192.168.100.30:8000';
+    return 'https://backend-telemedicina.onrender.com';
   }
 
   // Auth endpoints
@@ -20,10 +20,33 @@ class ApiConfig {
   static String get registerUrl => '$baseUrl/auth/register';
   static String get meUrl => '$baseUrl/auth/me';
   static String get refreshUrl => '$baseUrl/auth/refresh';
+  static String get forgotPasswordUrl => '$baseUrl/auth/forgot-password';
+  static String get resetPasswordUrl => '$baseUrl/auth/reset-password';
 
   // Pacientes endpoints (CU03)
   static String get patientsUrl => '$baseUrl/api/v1/pacientes';
   static String get myPatientProfileUrl => '$baseUrl/api/v1/pacientes/me';
+
+  // Médicos y Especialidades endpoints (CU04)
+  static String get doctorsUrl => '$baseUrl/api/v1/medicos';
+  static String get specialtiesUrl => '$baseUrl/api/v1/especialidades';
+
+  // Citas y Consultas (Appointments - CU25)
+  static String get appointmentsUrl => '$baseUrl/citas';
+  static String get availableSlotsUrl => '$baseUrl/citas/horarios-disponibles';
+
+  // Fichas Clínicas (Medical Records - CU09)
+  static String get fichasUrl => '$baseUrl/medical-records/fichas';
+
+  // Documentos Clínicos (Medical Records - CU12)
+  static String get myDocumentsUrl => '$baseUrl/api/v1/documentos/me';
+  static String documentDetailUrl(int id) => '$baseUrl/api/v1/documentos/$id';
+  static String documentDownloadUrl(int id) => '$baseUrl/api/v1/documentos/$id/download';
+
+  // Teleconsulta y Chat de Cita Médica (CU15)
+  static String teleconsultaUrl(int idCita) => '$baseUrl/api/v1/citas/$idCita/teleconsulta';
+  static String get myTeleconsultaUrl => '$baseUrl/api/v1/citas/me/teleconsulta';
+  static String chatMensajesUrl(int idCita) => '$baseUrl/api/v1/citas/$idCita/chat/mensajes';
 
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);

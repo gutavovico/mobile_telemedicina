@@ -15,8 +15,30 @@ class SecureStorageService {
 
   static const String _keyAccessToken = 'access_token';
   static const String _keyRefreshToken = 'refresh_token';
+  static const String _keyTenantId = 'tenant_id';
   static const String _keyUser = 'user_data';
   static const String _keyRememberMe = 'remember_me';
+
+  // Save Tenant ID
+  Future<void> saveTenantId(String tenantId) async {
+    try {
+      await _secureStorage.write(key: _keyTenantId, value: tenantId);
+    } catch (_) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyTenantId, tenantId);
+    }
+  }
+
+  // Get Tenant ID
+  Future<String?> getTenantId() async {
+    try {
+      final tenantId = await _secureStorage.read(key: _keyTenantId);
+      if (tenantId != null && tenantId.isNotEmpty) return tenantId;
+    } catch (_) {}
+
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyTenantId);
+  }
 
   // Save JWT tokens
   Future<void> saveTokens({required String accessToken, String? refreshToken}) async {
@@ -101,12 +123,14 @@ class SecureStorageService {
     try {
       await _secureStorage.delete(key: _keyAccessToken);
       await _secureStorage.delete(key: _keyRefreshToken);
+      await _secureStorage.delete(key: _keyTenantId);
       await _secureStorage.delete(key: _keyUser);
     } catch (_) {}
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccessToken);
     await prefs.remove(_keyRefreshToken);
+    await prefs.remove(_keyTenantId);
     await prefs.remove(_keyUser);
   }
 }

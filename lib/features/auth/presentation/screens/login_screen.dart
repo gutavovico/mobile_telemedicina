@@ -182,6 +182,26 @@ class _LoginScreenState extends State<LoginScreen> {
                             isLoading: authController.isLoading,
                             onPressed: _handleLogin,
                           ),
+                          const SizedBox(height: 16),
+
+                          // Forgot Password Link
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                authController.clearMessages();
+                                Navigator.of(context).pushNamed('/forgot-password');
+                              },
+                              child: Text(
+                                '¿Olvidaste tu contraseña?',
+                                style: AppTypography.labelLarge.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

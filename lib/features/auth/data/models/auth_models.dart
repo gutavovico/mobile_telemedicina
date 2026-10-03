@@ -1,3 +1,5 @@
+import '../../domain/entities/user_entity.dart';
+
 class LoginRequest {
   final String correo;
   final String password;
@@ -46,11 +48,13 @@ class TokenResponse {
   final String accessToken;
   final String? refreshToken;
   final String tokenType;
+  final String? tenantId;
 
   TokenResponse({
     required this.accessToken,
     this.refreshToken,
     this.tokenType = 'bearer',
+    this.tenantId,
   });
 
   factory TokenResponse.fromJson(Map<String, dynamic> json) {
@@ -58,34 +62,37 @@ class TokenResponse {
       accessToken: json['access_token'] ?? json['accessToken'] ?? '',
       refreshToken: json['refresh_token'] ?? json['refreshToken'],
       tokenType: json['token_type'] ?? 'bearer',
+      tenantId: json['tenant_id']?.toString(),
     );
   }
 }
 
-class UserModel {
-  final int idUsuario;
-  final String nombres;
-  final String apellidos;
-  final String correo;
-  final String? telefono;
-  final int? idRol;
-  final String? rolNombre;
-  final dynamic estado;
-
+class UserModel extends UserEntity {
   UserModel({
-    required this.idUsuario,
-    required this.nombres,
-    required this.apellidos,
-    required this.correo,
-    this.telefono,
-    this.idRol,
-    this.rolNombre,
-    this.estado,
-  });
+    required super.idUsuario,
+    required super.nombres,
+    required super.apellidos,
+    required super.correo,
+    super.telefono,
+    super.idRol,
+    super.rolNombre,
+    dynamic estado,
+  }) : super(estado: estado?.toString());
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    String? rolParsed;
+    if (json['rol_nombre'] != null) {
+      rolParsed = json['rol_nombre']?.toString();
+    } else if (json['rol'] != null) {
+      if (json['rol'] is Map) {
+        rolParsed = (json['rol'] as Map)['nombre']?.toString();
+      } else {
+        rolParsed = json['rol']?.toString();
+      }
+    }
+
     return UserModel(
       idUsuario: json['id_usuario'] is int
           ? json['id_usuario']
@@ -93,11 +100,11 @@ class UserModel {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       correo: json['correo'] ?? '',
-      telefono: json['telefono'],
+      telefono: json['telefono']?.toString(),
       idRol: json['id_rol'] is int
           ? json['id_rol']
           : int.tryParse(json['id_rol']?.toString() ?? ''),
-      rolNombre: json['rol_nombre'] ?? json['rol']?['nombre'],
+      rolNombre: rolParsed,
       estado: json['estado'],
     );
   }
@@ -112,4 +119,49 @@ class UserModel {
     'rol_nombre': rolNombre,
     'estado': estado,
   };
+}
+
+class ForgotPasswordRequest {
+  final String correo;
+
+  ForgotPasswordRequest({required this.correo});
+
+  Map<String, dynamic> toJson() => {
+    'correo': correo.trim(),
+  };
+}
+
+class ResetPasswordRequest {
+  final String correo;
+  final String codigo;
+  final String nuevaPassword;
+
+  ResetPasswordRequest({
+    required this.correo,
+    required this.codigo,
+    required this.nuevaPassword,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'correo': correo.trim(),
+    'codigo': codigo,
+    'nueva_password': nuevaPassword,
+  };
+}
+
+class ForgotPasswordResponse {
+  final String detail;
+  final String? debugCode;
+
+  ForgotPasswordResponse({
+    required this.detail,
+    this.debugCode,
+  });
+
+  factory ForgotPasswordResponse.fromJson(Map<String, dynamic> json) {
+    return ForgotPasswordResponse(
+      detail: json['detail'] ?? '',
+      debugCode: json['debug_code'] ?? json['debugCode'],
+    );
+  }
 }

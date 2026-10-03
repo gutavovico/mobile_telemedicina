@@ -28,6 +28,21 @@ class UnauthorizedException extends ApiException {
       : super(message: message, statusCode: 401);
 }
 
+class ForbiddenException extends ApiException {
+  ForbiddenException([String message = 'Acceso restringido: No cuentas con autorización para este recurso en tu centro de salud.'])
+      : super(message: message, statusCode: 403);
+}
+
+class NotFoundException extends ApiException {
+  NotFoundException([String message = 'El recurso solicitado no fue encontrado en este centro de salud.'])
+      : super(message: message, statusCode: 404);
+}
+
+class ConflictException extends ApiException {
+  ConflictException([String message = 'Conflicto: El recurso o turno ya se encuentra reservado u ocupado.'])
+      : super(message: message, statusCode: 409);
+}
+
 class ValidationException extends ApiException {
   ValidationException(String message, {super.details})
       : super(message: message, statusCode: 422);

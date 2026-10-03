@@ -50,37 +50,53 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white),
-            tooltip: 'Cerrar Sesión',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('Cerrar Sesión'),
-                  content: const Text('¿Estás seguro de que deseas salir de tu cuenta?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('Cancelar'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      child: const Text('Cerrar Sesión'),
-                    ),
-                  ],
-                ),
-              );
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: const Text('Cerrar sesión'),
+                    content: const Text('¿Estás seguro de que deseas salir de tu cuenta?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Cancelar'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Cerrar sesión'),
+                      ),
+                    ],
+                  ),
+                );
 
-              if (confirm == true && context.mounted) {
-                await context.read<AuthController>().logout();
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacementNamed('/login');
+                if (confirm == true && context.mounted) {
+                  await context.read<AuthController>().logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacementNamed('/login');
+                  }
                 }
-              }
-            },
+              },
+              icon: const Icon(Icons.logout_rounded, color: Colors.white),
+              label: const Text(
+                'Cerrar sesión',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                backgroundColor: AppColors.error,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -206,6 +222,27 @@ class HomeScreen extends StatelessWidget {
               childAspectRatio: 1.15,
               children: [
                 _buildServiceCard(
+                  icon: Icons.assignment_outlined,
+                  title: 'Fichas Médicas',
+                  subtitle: 'Emisión y turnos CU09',
+                  color: const Color(0xFF0D9488),
+                  onTap: () => Navigator.of(context).pushNamed('/fichas'),
+                ),
+                _buildServiceCard(
+                  icon: Icons.folder_shared_outlined,
+                  title: 'Documentos',
+                  subtitle: 'Recetas y laboratorios CU12',
+                  color: const Color(0xFF2563EB),
+                  onTap: () => Navigator.of(context).pushNamed('/documentos'),
+                ),
+                _buildServiceCard(
+                  icon: Icons.calendar_month_rounded,
+                  title: 'Mis Citas',
+                  subtitle: 'Consultas agendadas CU15',
+                  color: const Color(0xFFE11D48),
+                  onTap: () => Navigator.of(context).pushNamed('/mis-citas'),
+                ),
+                _buildServiceCard(
                   icon: Icons.person_outline_rounded,
                   title: 'Mi Expediente',
                   subtitle: 'Datos clínicos y contacto',
@@ -213,25 +250,25 @@ class HomeScreen extends StatelessWidget {
                   onTap: () => Navigator.of(context).pushNamed('/patient-profile'),
                 ),
                 _buildServiceCard(
+                  icon: Icons.medical_services_outlined,
+                  title: 'Directorio Médico',
+                  subtitle: 'Especialistas y catálogo',
+                  color: const Color(0xFF0284C7),
+                  onTap: () => Navigator.of(context).pushNamed('/doctors'),
+                ),
+                _buildServiceCard(
                   icon: Icons.video_call_rounded,
                   title: 'Teleconsultas',
                   subtitle: 'Atención virtual en tiempo real',
                   color: AppColors.secondary,
-                  onTap: () {},
-                ),
-                _buildServiceCard(
-                  icon: Icons.calendar_month_rounded,
-                  title: 'Mis Citas',
-                  subtitle: 'Historial y reservas',
-                  color: const Color(0xFF0284C7),
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed('/communications'),
                 ),
                 _buildServiceCard(
                   icon: Icons.chat_bubble_outline_rounded,
                   title: 'Asistente IA',
                   subtitle: 'Orientación médica 24/7',
                   color: const Color(0xFF7C3AED),
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed('/ai-assistant'),
                 ),
               ],
             ),

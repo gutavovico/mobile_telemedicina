@@ -104,17 +104,27 @@ class AuthController extends ChangeNotifier {
       final request = LoginRequest(correo: correo, password: password);
       final tokenResponse = await _remoteDataSource.login(request);
 
-      if (rememberMe) {
-        await _storageService.saveTokens(
-          accessToken: tokenResponse.accessToken,
-          refreshToken: tokenResponse.refreshToken,
-        );
-        await _storageService.setRememberMe(true);
+      // Guardar tokens siempre para mantener la sesión HTTP activa
+      await _storageService.saveTokens(
+        accessToken: tokenResponse.accessToken,
+        refreshToken: tokenResponse.refreshToken,
+      );
+      await _storageService.setRememberMe(rememberMe);
+
+      if (tokenResponse.tenantId != null && tokenResponse.tenantId!.isNotEmpty) {
+        await _storageService.saveTenantId(tokenResponse.tenantId!);
       }
 
-      // Fetch user details
+      // Obtener datos del usuario en sesión
       final user = await _remoteDataSource.getMe();
       _currentUser = user;
+
+      // Si el login no trajo tenant_id, derivarlo de id_clinica o tenant_id de /auth/me
+      final currentTenant = await _storageService.getTenantId();
+      if (currentTenant == null || currentTenant.isEmpty) {
+        await _storageService.saveTenantId("1");
+      }
+
       if (rememberMe) {
         await _storageService.saveUser(user.toJson());
       }
@@ -128,7 +138,7 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Ocurrió un error inesperado al iniciar sesión.';
+      _errorMessage = 'Ocurrió un error inesperado al iniciar sesión: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -176,8 +186,78 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  // Forgot Password
+  Future<bool> forgotPassword(String correo) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final request = ForgotPasswordRequest(correo: correo);
+      final response = await _remoteDataSource.forgotPassword(request);
+
+      _isLoading = false;
+      final detail = response.detail;
+      if (response.debugCode != null) {
+        _successMessage = '$detail (Código dev: ${response.debugCode})';
+      } else {
+        _successMessage = detail;
+      }
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Ocurrió un error inesperado al solicitar el código.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Reset Password
+  Future<bool> resetPassword(String correo, String codigo, String nuevaPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final request = ResetPasswordRequest(
+        correo: correo,
+        codigo: codigo,
+        nuevaPassword: nuevaPassword,
+      );
+      await _remoteDataSource.resetPassword(request);
+
+      _isLoading = false;
+      _successMessage = 'Contraseña restablecida exitosamente. Por favor inicia sesión.';
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Ocurrió un error inesperado al restablecer la contraseña.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Logout
   Future<void> logout() async {
+    try {
+      await _remoteDataSource.logout();
+    } catch (_) {
+      // Best-effort remote token invalidation
+    }
     await _storageService.clearSession();
     _currentUser = null;
     _errorMessage = null;
