@@ -251,6 +251,13 @@ class HomeScreen extends StatelessWidget {
                   onTap: () => Navigator.of(context).pushNamed('/mis-citas'),
                 ),
                 _buildServiceCard(
+                  icon: Icons.hourglass_top_rounded,
+                  title: 'Mi Turno',
+                  subtitle: 'Fila virtual del día CU08',
+                  color: const Color(0xFF0D9488),
+                  onTap: () => Navigator.of(context).pushNamed('/mi-cola'),
+                ),
+                _buildServiceCard(
                   icon: Icons.person_outline_rounded,
                   title: 'Mi Expediente',
                   subtitle: 'Datos clínicos y contacto',

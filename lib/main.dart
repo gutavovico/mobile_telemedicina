@@ -25,6 +25,9 @@ import 'features/medical_records/presentation/screens/home_screen.dart';
 import 'features/medical_records/presentation/screens/patient_profile_screen.dart';
 
 import 'features/appointments/presentation/screens/mis_citas_screen.dart';
+import 'features/cola_virtual/presentation/providers/cola_provider.dart';
+import 'features/cola_virtual/presentation/screens/cola_operativa_screen.dart';
+import 'features/cola_virtual/presentation/screens/mi_turno_screen.dart';
 import 'features/teleconsulta/presentation/providers/teleconsulta_provider.dart';
 
 void main() async {
@@ -54,6 +57,7 @@ class TelemedicinaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DoctorController()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => TeleconsultaProvider()),
+        ChangeNotifierProvider(create: (_) => ColaProvider()),
         ChangeNotifierProvider(create: (_) => FichaProvider()),
         ChangeNotifierProvider(create: (_) => ClinicalDocumentsProvider()),
       ],
@@ -74,6 +78,8 @@ class TelemedicinaApp extends StatelessWidget {
           '/appointments': (context) => const AppointmentsScreen(),
           '/citas': (context) => const MisCitasScreen(),
           '/mis-citas': (context) => const MisCitasScreen(),
+          '/mi-cola': (context) => const MiTurnoScreen(),
+          '/cola': (context) => const ColaOperativaScreen(),
           '/fichas': (context) => const FichasScreen(),
           '/fichas/nueva': (context) => const BookFichaScreen(),
           '/documentos': (context) => const DocumentsListScreen(),
