@@ -222,6 +222,13 @@ class HomeScreen extends StatelessWidget {
               childAspectRatio: 1.15,
               children: [
                 _buildServiceCard(
+                  icon: Icons.emergency_outlined,
+                  title: 'Consultas IA',
+                  subtitle: 'Evaluación por IA',
+                  color: const Color(0xFFDC2626),
+                  onTap: () => Navigator.of(context).pushNamed('/triage'),
+                ),
+                _buildServiceCard(
                   icon: Icons.assignment_outlined,
                   title: 'Fichas Médicas',
                   subtitle: 'Emisión y turnos CU09',
@@ -234,13 +241,6 @@ class HomeScreen extends StatelessWidget {
                   subtitle: 'Recetas y laboratorios CU12',
                   color: const Color(0xFF2563EB),
                   onTap: () => Navigator.of(context).pushNamed('/documentos'),
-                ),
-                _buildServiceCard(
-                  icon: Icons.calendar_month_rounded,
-                  title: 'Mis Citas',
-                  subtitle: 'Consultas agendadas CU25',
-                  color: const Color(0xFFE11D48),
-                  onTap: () => Navigator.of(context).pushNamed('/appointments'),
                 ),
                 _buildServiceCard(
                   icon: Icons.person_outline_rounded,

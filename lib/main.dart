@@ -23,6 +23,7 @@ import 'features/medical_records/presentation/screens/documents_list_screen.dart
 import 'features/medical_records/presentation/screens/fichas_screen.dart';
 import 'features/medical_records/presentation/screens/home_screen.dart';
 import 'features/medical_records/presentation/screens/patient_profile_screen.dart';
+import 'features/medical_records/triage/presentation/pages/triage_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,6 +67,7 @@ class TelemedicinaApp extends StatelessWidget {
           '/reset-password': (context) => const ResetPasswordScreen(),
           '/home': (context) => const HomeScreen(),
           '/patient-profile': (context) => const PatientProfileScreen(),
+            '/triage': (context) => TriagePage(),
           '/doctors': (context) => const DoctorCatalogScreen(),
           '/appointments': (context) => const AppointmentsScreen(),
           '/citas': (context) => const AppointmentsScreen(),

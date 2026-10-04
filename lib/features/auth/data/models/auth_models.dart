@@ -93,7 +93,7 @@ class UserModel extends UserEntity {
       idRol: json['id_rol'] is int
           ? json['id_rol']
           : int.tryParse(json['id_rol']?.toString() ?? ''),
-      rolNombre: json['rol_nombre'] ?? json['rol']?['nombre'],
+      rolNombre: json['rol_nombre'] ?? (json['rol'] is String ? json['rol'] : (json['rol'] != null ? json['rol']['nombre'] : null)),
       estado: json['estado'],
     );
   }
