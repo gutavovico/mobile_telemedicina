@@ -48,6 +48,13 @@ class ApiConfig {
   static String get myTeleconsultaUrl => '$baseUrl/api/v1/citas/me/teleconsulta';
   static String chatMensajesUrl(int idCita) => '$baseUrl/api/v1/citas/$idCita/chat/mensajes';
 
+  // Fila virtual y tiempos de espera (CU08)
+  static String get liveQueueUrl => '$baseUrl/api/v1/cola';
+  static String get miTurnoUrl => '$baseUrl/api/v1/cola/mi-turno';
+  static String avanzarColaUrl(int idCita) => '$baseUrl/api/v1/cola/$idCita/avanzar';
+  static String perdidaColaUrl(int idCita) => '$baseUrl/api/v1/cola/$idCita/perdida';
+  static String get pausasColaUrl => '$baseUrl/api/v1/cola/pausas';
+
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
 }
