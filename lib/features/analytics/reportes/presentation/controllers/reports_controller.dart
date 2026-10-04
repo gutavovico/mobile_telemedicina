@@ -407,7 +407,10 @@ class ReportsController extends ChangeNotifier {
       if (report.id == definition?.reporte) source = report;
     }
     if (definition == null || source == null || info == null) return 'Selecciona un reporte.';
-    if (definition.pagina != 1 && (draft == null || !identical(definition, draft))) {
+    final query = definition;
+    final resolvedSource = source;
+    final catalogInfo = info;
+    if (query.pagina != 1 && (draft == null || !identical(query, draft))) {
       return 'La interpretación debe comenzar en la primera página.';
     }
     if (options == null) return 'No se cargaron las opciones del reporte.';
@@ -416,21 +419,21 @@ class ReportsController extends ChangeNotifier {
       final parsed = DateTime.tryParse(value);
       return parsed != null && _iso(parsed) == value ? parsed : null;
     }
-    final from = date(definition.desde), to = date(definition.hasta);
+    final from = date(query.desde), to = date(query.hasta);
     if (from == null || to == null || to.isBefore(from)) return 'Selecciona un período válido.';
     final days = DateTime.utc(to.year, to.month, to.day)
         .difference(DateTime.utc(from.year, from.month, from.day)).inDays + 1;
-    if (days > (info.limites['periodo_dias'] ?? 366)) {
+    if (days > (catalogInfo.limites['periodo_dias'] ?? 366)) {
       return 'El período supera el límite del catálogo.';
     }
-    if (definition.tamanoPagina < 1 || definition.tamanoPagina >
-        (info.limites['tamano_pagina'] ?? 100)) return 'Tamaño de página no permitido.';
-    if (definition.filtros.length > (info.limites['filtros'] ?? 8) ||
-        definition.filtros.map((e) => e.campo).toSet().length != definition.filtros.length ||
-        definition.filtros.any((e) => !source.filtros.contains(e.campo))) {
+    if (query.tamanoPagina < 1 || query.tamanoPagina >
+        (catalogInfo.limites['tamano_pagina'] ?? 100)) return 'Tamaño de página no permitido.';
+    if (query.filtros.length > (catalogInfo.limites['filtros'] ?? 8) ||
+        query.filtros.map((e) => e.campo).toSet().length != query.filtros.length ||
+        query.filtros.any((e) => !resolvedSource.filtros.contains(e.campo))) {
       return 'Filtros incompatibles con el reporte.';
     }
-    for (final filter in definition.filtros) {
+    for (final filter in query.filtros) {
       final value = filter.valor;
       if (filter.campo == 'id_medico' &&
           (value is! int || !options!.medicos.any((item) => item['id_medico'] == value))) {
@@ -442,7 +445,7 @@ class ReportsController extends ChangeNotifier {
         return 'Selecciona una especialidad de las opciones disponibles.';
       }
       if (filter.campo == 'modalidad' &&
-          (value is! String || !info.modalidades.contains(value))) {
+          (value is! String || !catalogInfo.modalidades.contains(value))) {
         return 'Modalidad no permitida.';
       }
       if (filter.campo == 'estado' &&
@@ -452,24 +455,24 @@ class ReportsController extends ChangeNotifier {
         return 'Estado no permitido.';
       }
     }
-    if (definition.agrupacion.length > (info.limites['agrupaciones'] ?? 2) ||
-        definition.agrupacion.toSet().length != definition.agrupacion.length ||
-        definition.agrupacion.any((e) => !source.dimensiones.contains(e))) {
+    if (query.agrupacion.length > (catalogInfo.limites['agrupaciones'] ?? 2) ||
+        query.agrupacion.toSet().length != query.agrupacion.length ||
+        query.agrupacion.any((e) => !resolvedSource.dimensiones.contains(e))) {
       return 'Agrupación incompatible con el reporte.';
     }
-    if (definition.columnas.isEmpty || definition.columnas.length >
-        (info.limites['columnas'] ?? 6) ||
-        definition.columnas.toSet().length != definition.columnas.length ||
-        !definition.columnas.contains(source.metricaPrincipal) ||
-        definition.columnas.any((e) => !source.columnas.contains(e) ||
-          (source.dimensiones.contains(e) && !definition.agrupacion.contains(e))) ||
-        definition.agrupacion.any((e) => !definition.columnas.contains(e))) {
+    if (query.columnas.isEmpty || query.columnas.length >
+        (catalogInfo.limites['columnas'] ?? 6) ||
+        query.columnas.toSet().length != query.columnas.length ||
+        !query.columnas.contains(resolvedSource.metricaPrincipal) ||
+        query.columnas.any((e) => !resolvedSource.columnas.contains(e) ||
+          (resolvedSource.dimensiones.contains(e) && !query.agrupacion.contains(e))) ||
+        query.agrupacion.any((e) => !query.columnas.contains(e))) {
       return 'Selecciona columnas compatibles, agrupaciones y métrica principal.';
     }
-    if (definition.orden.length > (info.limites['columnas'] ?? 6) ||
-        definition.orden.map((e) => e.campo).toSet().length != definition.orden.length ||
-        definition.orden.any((e) => !definition.columnas.contains(e.campo) ||
-          !source.ordenables.contains(e.campo) ||
+    if (query.orden.length > (catalogInfo.limites['columnas'] ?? 6) ||
+        query.orden.map((e) => e.campo).toSet().length != query.orden.length ||
+        query.orden.any((e) => !query.columnas.contains(e.campo) ||
+          !resolvedSource.ordenables.contains(e.campo) ||
           !const {'asc', 'desc'}.contains(e.direccion))) {
       return 'El orden debe usar columnas seleccionadas sin repetir.';
     }
