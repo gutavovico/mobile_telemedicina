@@ -221,6 +221,14 @@ class HomeScreen extends StatelessWidget {
               mainAxisSpacing: 14,
               childAspectRatio: 1.15,
               children: [
+                if (authController.canAccessReports)
+                  _buildServiceCard(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Reportes',
+                    subtitle: 'Clínicos y administrativos CU22',
+                    color: AppColors.primary,
+                    onTap: () => Navigator.of(context).pushNamed('/analytics'),
+                  ),
                 _buildServiceCard(
                   icon: Icons.assignment_outlined,
                   title: 'Fichas Médicas',

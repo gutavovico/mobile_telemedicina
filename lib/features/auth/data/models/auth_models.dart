@@ -75,6 +75,7 @@ class UserModel extends UserEntity {
     required super.correo,
     super.telefono,
     super.idRol,
+    super.idClinica,
     super.rolNombre,
     dynamic estado,
   }) : super(estado: estado?.toString());
@@ -104,6 +105,9 @@ class UserModel extends UserEntity {
       idRol: json['id_rol'] is int
           ? json['id_rol']
           : int.tryParse(json['id_rol']?.toString() ?? ''),
+      idClinica: json['id_clinica'] is int
+          ? json['id_clinica'] as int
+          : int.tryParse(json['id_clinica']?.toString() ?? ''),
       rolNombre: rolParsed,
       estado: json['estado'],
     );
@@ -116,6 +120,7 @@ class UserModel extends UserEntity {
     'correo': correo,
     'telefono': telefono,
     'id_rol': idRol,
+    'id_clinica': idClinica,
     'rol_nombre': rolNombre,
     'estado': estado,
   };

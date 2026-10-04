@@ -5,6 +5,7 @@ class UserEntity {
   final String correo;
   final String? telefono;
   final int? idRol;
+  final int? idClinica;
   final String? rolNombre;
   final String? estado;
 
@@ -15,6 +16,7 @@ class UserEntity {
     required this.correo,
     this.telefono,
     this.idRol,
+    this.idClinica,
     this.rolNombre,
     this.estado,
   });
