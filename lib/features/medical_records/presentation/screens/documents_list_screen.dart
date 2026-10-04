@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../medical_records/domain/entities/clinical_document.dart';
 import '../providers/clinical_documents_provider.dart';
 import 'document_viewer_screen.dart';
@@ -20,7 +21,9 @@ class _DocumentsListScreenState extends State<DocumentsListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClinicalDocumentsProvider>().loadDocuments();
+      context.read<ClinicalDocumentsProvider>().loadDocuments(
+        authController: context.read<AuthController>(),
+      );
     });
   }
 

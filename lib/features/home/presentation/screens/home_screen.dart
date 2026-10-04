@@ -28,24 +28,30 @@ class HomeScreen extends StatelessWidget {
               child: const Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'San Juan de Dios',
-                  style: AppTypography.titleMedium.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'San Juan de Dios',
+                    style: AppTypography.titleMedium.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  'Portal de Telemedicina',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.secondaryContainer,
-                    fontSize: 11,
+                  Text(
+                    'Portal de Telemedicina',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.secondaryContainer,
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

@@ -12,6 +12,8 @@ import 'package:mobile_telemedicina/features/medical_records/domain/repositories
 import 'package:mobile_telemedicina/features/medical_records/domain/usecases/download_document_usecase.dart';
 import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_document_detail_usecase.dart';
 import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_my_documents_usecase.dart';
+import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_patient_documents_usecase.dart';
+import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_tenant_documents_usecase.dart';
 import 'package:mobile_telemedicina/features/medical_records/presentation/providers/clinical_documents_provider.dart';
 
 class FakeApiClient implements ApiClientInterface {
@@ -79,6 +81,34 @@ class FakeRepository implements ClinicalDocumentRepository {
     int pageSize = 20,
     String? tipoDocumento,
     String? q,
+  }) async {
+    if (paginado == null) throw Exception('empty');
+    return paginado!;
+  }
+
+  @override
+  Future<DocumentoPaginado> getTenantDocuments({
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    int? idPaciente,
+    String? fechaDesde,
+    String? fechaHasta,
+  }) async {
+    if (paginado == null) throw Exception('empty');
+    return paginado!;
+  }
+
+  @override
+  Future<DocumentoPaginado> getPatientDocuments({
+    required int patientId,
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    String? fechaDesde,
+    String? fechaHasta,
   }) async {
     if (paginado == null) throw Exception('empty');
     return paginado!;
@@ -392,6 +422,8 @@ void main() {
       );
       return ClinicalDocumentsProvider(
         getMyDocumentsUseCase: GetMyDocumentsUseCase(repository: repo),
+        getTenantDocumentsUseCase: GetTenantDocumentsUseCase(repository: repo),
+        getPatientDocumentsUseCase: GetPatientDocumentsUseCase(repository: repo),
         getDocumentDetailUseCase: GetDocumentDetailUseCase(repository: repo),
         downloadDocumentUseCase: DownloadDocumentUseCase(repository: repo),
       );

@@ -26,6 +26,49 @@ class ClinicalDocumentService {
     return DocumentoPaginadoModel.fromJson(response as Map<String, dynamic>);
   }
 
+  /// Consulta `GET /api/v1/documentos` (documentos del tenant - ADMIN/MEDICO/RECEPCION)
+  Future<DocumentoPaginadoModel> getTenantDocuments({
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    int? idPaciente,
+    String? fechaDesde,
+    String? fechaHasta,
+  }) async {
+    final Map<String, String> query = {'page': '$page', 'page_size': '$pageSize'};
+    if (tipoDocumento != null && tipoDocumento.isNotEmpty) query['tipo_documento'] = tipoDocumento;
+    if (q != null && q.trim().isNotEmpty) query['q'] = q.trim();
+    if (idPaciente != null) query['id_paciente'] = '$idPaciente';
+    if (fechaDesde != null && fechaDesde.isNotEmpty) query['fecha_desde'] = fechaDesde;
+    if (fechaHasta != null && fechaHasta.isNotEmpty) query['fecha_hasta'] = fechaHasta;
+    final queryString = Uri(queryParameters: query).query;
+
+    final response = await _apiClient.get('${ApiConfig.documentsUrl}?$queryString');
+    return DocumentoPaginadoModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Consulta `GET /api/v1/pacientes/{id_paciente}/documentos` (documentos de un paciente específico)
+  Future<DocumentoPaginadoModel> getPatientDocuments({
+    required int patientId,
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    String? fechaDesde,
+    String? fechaHasta,
+  }) async {
+    final Map<String, String> query = {'page': '$page', 'page_size': '$pageSize'};
+    if (tipoDocumento != null && tipoDocumento.isNotEmpty) query['tipo_documento'] = tipoDocumento;
+    if (q != null && q.trim().isNotEmpty) query['q'] = q.trim();
+    if (fechaDesde != null && fechaDesde.isNotEmpty) query['fecha_desde'] = fechaDesde;
+    if (fechaHasta != null && fechaHasta.isNotEmpty) query['fecha_hasta'] = fechaHasta;
+    final queryString = Uri(queryParameters: query).query;
+
+    final response = await _apiClient.get('${ApiConfig.patientDocumentsUrl(patientId)}?$queryString');
+    return DocumentoPaginadoModel.fromJson(response as Map<String, dynamic>);
+  }
+
   /// Consulta `GET /api/v1/documentos/{id}` con el detalle completo
   Future<ClinicalDocumentModel> getDocumentById(int idDocumento) async {
     final response = await _apiClient.get(ApiConfig.documentDetailUrl(idDocumento));

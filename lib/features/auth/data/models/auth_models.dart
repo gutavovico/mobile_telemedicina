@@ -76,8 +76,9 @@ class UserModel extends UserEntity {
     super.telefono,
     super.idRol,
     super.rolNombre,
-    dynamic estado,
-  }) : super(estado: estado?.toString());
+    super.estado,
+    super.idClinica,
+  });
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 
@@ -105,7 +106,12 @@ class UserModel extends UserEntity {
           ? json['id_rol']
           : int.tryParse(json['id_rol']?.toString() ?? ''),
       rolNombre: rolParsed,
-      estado: json['estado'],
+      estado: json['estado'] is bool
+          ? (json['estado'] ? 'activo' : 'inactivo')
+          : json['estado']?.toString(),
+      idClinica: json['id_clinica'] is int
+          ? json['id_clinica']
+          : int.tryParse(json['id_clinica']?.toString() ?? ''),
     );
   }
 
@@ -118,6 +124,7 @@ class UserModel extends UserEntity {
     'id_rol': idRol,
     'rol_nombre': rolNombre,
     'estado': estado,
+    'id_clinica': idClinica,
   };
 }
 

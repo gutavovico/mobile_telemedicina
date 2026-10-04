@@ -27,6 +27,12 @@ class ApiClient implements ApiClientInterface {
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
+      
+      // Add tenant ID if available (for multi-tenant support)
+      final tenantId = await _storage.getTenantId();
+      if (tenantId != null && tenantId.isNotEmpty) {
+        headers['X-Tenant-ID'] = tenantId;
+      }
     }
 
     if (extraHeaders != null) {
@@ -122,20 +128,72 @@ class ApiClient implements ApiClientInterface {
     if (body is Map<String, dynamic>) {
       if (body.containsKey('detail')) {
         final detail = body['detail'];
-        if (detail is String) return detail;
+        if (detail is String) return _translateError(detail, statusCode);
         if (detail is List && detail.isNotEmpty) {
           final first = detail.first;
           if (first is Map && first.containsKey('msg')) {
-            return first['msg'].toString();
+            return _translateError(first['msg'].toString(), statusCode);
           }
-          return detail.toString();
+          return _translateError(detail.toString(), statusCode);
         }
       }
       if (body.containsKey('message')) {
-        return body['message'].toString();
+        return _translateError(body['message'].toString(), statusCode);
       }
     }
-    return 'Error del servidor (Código $statusCode)';
+    return _translateError('Error del servidor (Código $statusCode)', statusCode);
+  }
+
+  String _translateError(String message, int statusCode) {
+    // Translate common English error messages to Spanish
+    final lower = message.toLowerCase();
+    
+    // FastAPI default messages
+    if (lower == 'not authenticated') {
+      return 'No autenticado: token inválido o ausente';
+    }
+    if (lower == 'not authorized') {
+      return 'No autorizado';
+    }
+    if (lower.contains('invalid token') || lower.contains('token invalid')) {
+      return 'Token inválido o expirado';
+    }
+    if (lower.contains('expired')) {
+      return 'Sesión expirada';
+    }
+    if (lower.contains('unauthorized')) {
+      return 'No autorizado: credenciales inválidas';
+    }
+    if (lower.contains('forbidden')) {
+      return 'Acceso denegado';
+    }
+    if (lower.contains('not found')) {
+      return 'Recurso no encontrado';
+    }
+    if (lower.contains('internal server error')) {
+      return 'Error interno del servidor';
+    }
+    if (lower.contains('bad request')) {
+      return 'Solicitud inválida';
+    }
+    
+    // Status code fallbacks
+    switch (statusCode) {
+      case 401:
+        return 'Sesión expirada o credenciales inválidas';
+      case 403:
+        return 'Acceso denegado: no tiene permisos para este recurso';
+      case 404:
+        return 'Recurso no encontrado';
+      case 422:
+        return 'Datos de entrada inválidos';
+      case 500:
+      case 502:
+      case 503:
+        return 'Error del servidor. Intente más tarde';
+      default:
+        return message;
+    }
   }
 
   @override

@@ -47,6 +47,9 @@ class AuthController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   bool get isAuthenticated => _currentUser != null;
+  
+  /// Retorna el nombre del rol del usuario actual (ej: 'paciente', 'medico', 'admin', 'recepcion')
+  String? get userRole => _currentUser?.rolNombre?.toLowerCase();
 
   void clearMessages() {
     _errorMessage = null;
@@ -125,17 +128,25 @@ class AuthController extends ChangeNotifier {
       final request = LoginRequest(correo: correo, password: password);
       final tokenResponse = await _remoteDataSource.login(request);
 
+      // ALWAYS save tokens for the current session (needed for getMe() call)
+      await _storageService.saveTokens(
+        accessToken: tokenResponse.accessToken,
+        refreshToken: tokenResponse.refreshToken,
+      );
+      
       if (rememberMe) {
-        await _storageService.saveTokens(
-          accessToken: tokenResponse.accessToken,
-          refreshToken: tokenResponse.refreshToken,
-        );
         await _storageService.setRememberMe(true);
       }
 
       // Fetch user details
       final user = await _remoteDataSource.getMe();
       _currentUser = user;
+      
+      // Save tenant ID from user profile (id_clinica)
+      if (user.idClinica != null) {
+        await _storageService.saveTenantId(user.idClinica.toString());
+      }
+      
       if (rememberMe) {
         await _storageService.saveUser(user.toJson());
       }

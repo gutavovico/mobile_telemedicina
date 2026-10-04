@@ -20,7 +20,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
-  /// Canal de entrega del codigo (CU23).
+  /// Canal de entrega del codigo (CU23). Solo email.
   String _canal = 'email';
 
   @override
@@ -122,43 +122,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             onFieldSubmitted: (_) => _handleForgotPassword(),
                           ),
 const SizedBox(height: 24),
-
-                          // Delivery channel (CU23): email or SMS.
-                          Text(
-                            '¿Cómo quieres recibir el código?',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelLarge
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 12),
-                          SegmentedButton<String>(
-                            segments: const [
-                              ButtonSegment(
-                                value: 'email',
-                                label: Text('Correo'),
-                                icon: Icon(Icons.mail_outline_rounded),
-                              ),
-                              ButtonSegment(
-                                value: 'sms',
-                                label: Text('SMS'),
-                                icon: Icon(Icons.sms_outlined),
-                              ),
-                            ],
-                            selected: {_canal},
-                            onSelectionChanged: (selection) {
-                              setState(() => _canal = selection.first);
-                            },
-                          ),
-                          if (_canal == 'sms') ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'El código se enviará al teléfono registrado '
-                              'en tu cuenta.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                          const SizedBox(height: 24),
 
                           // Submit Button
                           AuthButton(
