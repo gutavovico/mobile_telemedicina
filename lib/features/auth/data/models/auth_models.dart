@@ -117,11 +117,36 @@ class UserModel {
 class ForgotPasswordRequest {
   final String correo;
 
-  ForgotPasswordRequest({required this.correo});
+  /// Canal de entrega del codigo de recuperacion (CU23): `email` o `sms`.
+  final String canal;
+
+  ForgotPasswordRequest({required this.correo, this.canal = 'email'});
 
   Map<String, dynamic> toJson() => {
     'correo': correo.trim(),
+    'canal': canal,
   };
+}
+
+/// Estado de inactividad de la sesion actual (CU23).
+class SessionStatusResponse {
+  final int segundosRestantes;
+  final int ventanaSegundos;
+  final int avisoSegundos;
+
+  SessionStatusResponse({
+    required this.segundosRestantes,
+    required this.ventanaSegundos,
+    required this.avisoSegundos,
+  });
+
+  factory SessionStatusResponse.fromJson(Map<String, dynamic> json) {
+    return SessionStatusResponse(
+      segundosRestantes: (json['segundos_restantes'] as num?)?.toInt() ?? 0,
+      ventanaSegundos: (json['ventana_segundos'] as num?)?.toInt() ?? 0,
+      avisoSegundos: (json['aviso_segundos'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 class ResetPasswordRequest {

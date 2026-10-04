@@ -5,5 +5,11 @@ import 'dart:typed_data';
 abstract class ApiClientInterface {
   Future<dynamic> get(String url, {bool includeAuth = true, String? authToken});
 
+  Future<dynamic> post(
+    String url, {
+    dynamic body,
+    bool includeAuth = true,
+  });
+
   Future<Uint8List> downloadBytes(String url, {bool includeAuth = true});
 }

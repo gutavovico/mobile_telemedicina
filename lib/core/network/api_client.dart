@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../storage/secure_storage_service.dart';
 import 'api_exceptions.dart';
+import 'api_client_interface.dart';
 import '../config/api_config.dart';
 
-class ApiClient {
+class ApiClient implements ApiClientInterface {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
   ApiClient._internal();
@@ -34,9 +36,10 @@ class ApiClient {
     return headers;
   }
 
-  Future<dynamic> get(String url, {bool includeAuth = true}) async {
+  @override
+  Future<dynamic> get(String url, {bool includeAuth = true, String? authToken}) async {
     try {
-      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final headers = await _buildHeaders(includeAuth: includeAuth, extraHeaders: authToken != null ? {'Authorization': 'Bearer $authToken'} : null);
       final response = await _client
           .get(Uri.parse(url), headers: headers)
           .timeout(ApiConfig.timeoutDuration);
@@ -54,6 +57,7 @@ class ApiClient {
     }
   }
 
+  @override
   Future<dynamic> post(String url, {dynamic body, bool includeAuth = true}) async {
     try {
       final headers = await _buildHeaders(includeAuth: includeAuth);
@@ -132,5 +136,31 @@ class ApiClient {
       }
     }
     return 'Error del servidor (Código $statusCode)';
+  }
+
+  @override
+  Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
+    try {
+      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final response = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(ApiConfig.downloadTimeoutDuration);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response.bodyBytes;
+      }
+
+      final errorMessage = _extractErrorMessage(response.body, response.statusCode);
+      throw ApiException(message: errorMessage, statusCode: response.statusCode);
+    } on SocketException {
+      throw NetworkException();
+    } on TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw NetworkException('Error de comunicación: ${e.toString()}');
+    }
   }
 }

@@ -220,7 +220,7 @@ class HomeScreen extends StatelessWidget {
                   title: 'Recetas Médicas',
                   subtitle: 'Prescripciones digitales',
                   color: const Color(0xFF0284C7),
-                  onTap: () {},
+                  onTap: () => Navigator.pushNamed(context, '/mis-documentos'),
                 ),
                 _buildServiceCard(
                   icon: Icons.chat_bubble_outline_rounded,
