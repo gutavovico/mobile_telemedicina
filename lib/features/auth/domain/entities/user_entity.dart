@@ -8,6 +8,7 @@ class UserEntity {
   final int? idClinica;
   final String? rolNombre;
   final String? estado;
+  final int? idClinica;
 
   const UserEntity({
     required this.idUsuario,
@@ -19,5 +20,6 @@ class UserEntity {
     this.idClinica,
     this.rolNombre,
     this.estado,
+    this.idClinica,
   });
 }

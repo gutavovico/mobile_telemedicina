@@ -77,8 +77,9 @@ class UserModel extends UserEntity {
     super.idRol,
     super.idClinica,
     super.rolNombre,
-    dynamic estado,
-  }) : super(estado: estado?.toString());
+    super.estado,
+    super.idClinica,
+  });
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 
@@ -109,7 +110,12 @@ class UserModel extends UserEntity {
           ? json['id_clinica'] as int
           : int.tryParse(json['id_clinica']?.toString() ?? ''),
       rolNombre: rolParsed,
-      estado: json['estado'],
+      estado: json['estado'] is bool
+          ? (json['estado'] ? 'activo' : 'inactivo')
+          : json['estado']?.toString(),
+      idClinica: json['id_clinica'] is int
+          ? json['id_clinica']
+          : int.tryParse(json['id_clinica']?.toString() ?? ''),
     );
   }
 
@@ -123,17 +129,43 @@ class UserModel extends UserEntity {
     'id_clinica': idClinica,
     'rol_nombre': rolNombre,
     'estado': estado,
+    'id_clinica': idClinica,
   };
 }
 
 class ForgotPasswordRequest {
   final String correo;
 
-  ForgotPasswordRequest({required this.correo});
+  /// Canal de entrega del codigo de recuperacion (CU23): `email` o `sms`.
+  final String canal;
+
+  ForgotPasswordRequest({required this.correo, this.canal = 'email'});
 
   Map<String, dynamic> toJson() => {
     'correo': correo.trim(),
+    'canal': canal,
   };
+}
+
+/// Estado de inactividad de la sesion actual (CU23).
+class SessionStatusResponse {
+  final int segundosRestantes;
+  final int ventanaSegundos;
+  final int avisoSegundos;
+
+  SessionStatusResponse({
+    required this.segundosRestantes,
+    required this.ventanaSegundos,
+    required this.avisoSegundos,
+  });
+
+  factory SessionStatusResponse.fromJson(Map<String, dynamic> json) {
+    return SessionStatusResponse(
+      segundosRestantes: (json['segundos_restantes'] as num?)?.toInt() ?? 0,
+      ventanaSegundos: (json['ventana_segundos'] as num?)?.toInt() ?? 0,
+      avisoSegundos: (json['aviso_segundos'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 class ResetPasswordRequest {

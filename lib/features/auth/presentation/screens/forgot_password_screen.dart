@@ -20,6 +20,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
+  /// Canal de entrega del codigo (CU23). Solo email.
+  String _canal = 'email';
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -34,7 +37,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
 
     final authController = context.read<AuthController>();
-    final success = await authController.forgotPassword(_emailController.text.trim());
+    final success = await authController.forgotPassword(
+      _emailController.text.trim(),
+      canal: _canal,
+    );
 
     if (success && mounted) {
       Navigator.of(context).pushNamed(
@@ -115,7 +121,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             validator: Validators.validateEmail,
                             onFieldSubmitted: (_) => _handleForgotPassword(),
                           ),
-                          const SizedBox(height: 24),
+const SizedBox(height: 24),
 
                           // Submit Button
                           AuthButton(
