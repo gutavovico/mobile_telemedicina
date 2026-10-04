@@ -189,7 +189,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
               _requestFocus.requestFocus();
             } : null)),
       ),
-      const Text('Enter envía · Shift+Enter añade una línea. En móvil usa las acciones visibles.',
+      Text('Enter envía · Shift+Enter añade una línea. En móvil usa las acciones visibles.',
         style: AppTypography.bodySmall),
       const SizedBox(height: 8),
       Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center,
