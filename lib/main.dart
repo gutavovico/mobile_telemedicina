@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/ai_assistant/presentation/screens/ai_assistant_screen.dart';
-import 'features/analytics/presentation/screens/analytics_screen.dart';
+import 'features/analytics/reportes/presentation/screens/reports_screen.dart';
 import 'features/appointments/presentation/controllers/doctor_controller.dart';
 import 'features/appointments/presentation/providers/appointment_provider.dart';
 import 'features/appointments/presentation/screens/appointments_screen.dart';
@@ -79,7 +79,7 @@ class TelemedicinaApp extends StatelessWidget {
           '/documentos': (context) => const DocumentsListScreen(),
           '/mis-documentos': (context) => const DocumentsListScreen(),
           '/communications': (context) => const CommunicationsScreen(),
-          '/analytics': (context) => const AnalyticsScreen(),
+          '/analytics': (context) => const ReportsScreen(),
           '/ai-assistant': (context) => const AiAssistantScreen(),
         },
       ),

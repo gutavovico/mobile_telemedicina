@@ -1,13 +1,14 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 
 class ApiConfig {
   static String get baseUrl {
+    const override = String.fromEnvironment('API_BASE_URL');
+    if (override.isNotEmpty) return override;
     if (kIsWeb) {
       // Backend local para desarrollo Web (Edge / Chrome)
       return 'http://127.0.0.1:8000';
     }
-    if (Platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       // 10.0.2.2 points to host machine loopback in Android Emulator
       return 'https://backend-telemedicina.onrender.com';
     }
@@ -48,6 +49,16 @@ class ApiConfig {
   static String get myTeleconsultaUrl => '$baseUrl/api/v1/citas/me/teleconsulta';
   static String chatMensajesUrl(int idCita) => '$baseUrl/api/v1/citas/$idCita/chat/mensajes';
 
+  // CU22/CU27 reportes; el backend resuelve id_clinica desde la sesión.
+  static String get reportCatalogUrl => '$baseUrl/analytics/reportes/catalogo';
+  static String get reportOptionsUrl => '$baseUrl/analytics/reportes/opciones';
+  static String get reportQueryUrl => '$baseUrl/analytics/reportes/consulta';
+  static String get reportExportUrl => '$baseUrl/analytics/reportes/exportar';
+  static String get reportInterpretUrl => '$baseUrl/analytics/reportes/interpretar';
+  static String get reportTranscribeUrl => '$baseUrl/analytics/reportes/transcribir';
+
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
+  static const Duration reportExportTimeoutDuration = Duration(seconds: 60);
+  static const Duration reportTranscriptionTimeoutDuration = Duration(seconds: 60);
 }

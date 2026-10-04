@@ -1,8 +1,8 @@
-import 'dart:async';
+import 'dart:async' as async;
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../storage/secure_storage_service.dart';
 import 'api_exceptions.dart';
 import 'api_client_interface.dart';
@@ -15,6 +15,10 @@ class ApiClient implements ApiClientInterface {
 
   final http.Client _client = http.Client();
   final SecureStorageService _storage = SecureStorageService();
+  String? _sessionAccessToken;
+
+  void setSessionAccessToken(String? token) => _sessionAccessToken = token;
+  bool get hasSessionAccessToken => _sessionAccessToken?.isNotEmpty ?? false;
 
   Future<Map<String, String>> _buildHeaders({bool includeAuth = true, Map<String, String>? extraHeaders}) async {
     final headers = <String, String>{
@@ -23,7 +27,7 @@ class ApiClient implements ApiClientInterface {
     };
 
     if (includeAuth) {
-      final token = await _storage.getAccessToken();
+      final token = _sessionAccessToken ?? await _storage.getAccessToken();
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
@@ -53,9 +57,7 @@ class ApiClient implements ApiClientInterface {
           .timeout(ApiConfig.timeoutDuration);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw NetworkException();
-    } on TimeoutException {
+    } on async.TimeoutException {
       throw TimeoutException();
     } on http.ClientException {
       throw NetworkException();
@@ -88,9 +90,7 @@ class ApiClient implements ApiClientInterface {
       }
       final errorMessage = _extractErrorMessage(decodedBody, response.statusCode);
       throw ApiException(message: errorMessage, statusCode: response.statusCode);
-    } on SocketException {
-      throw NetworkException();
-    } on TimeoutException {
+    } on async.TimeoutException {
       throw TimeoutException();
     } on http.ClientException {
       throw NetworkException();
@@ -112,15 +112,60 @@ class ApiClient implements ApiClientInterface {
           .timeout(ApiConfig.timeoutDuration);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw NetworkException();
-    } on TimeoutException {
+    } on async.TimeoutException {
       throw TimeoutException();
     } on http.ClientException {
       throw NetworkException();
     } catch (e) {
       if (e is ApiException) rethrow;
       throw NetworkException('Error de comunicación: ${e.toString()}');
+    }
+  }
+
+  /// Audio autenticado. MultipartRequest fija el boundary; no se envía JSON.
+  Future<dynamic> postAudio(String url, Uint8List bytes, {
+    required String filename, required String mimeType,
+  }) async {
+    try {
+      final headers = await _buildHeaders();
+      headers.remove('Content-Type');
+      final request = http.MultipartRequest('POST', Uri.parse(url))
+        ..headers.addAll(headers)
+        ..files.add(http.MultipartFile.fromBytes('audio', bytes,
+          filename: filename, contentType: MediaType.parse(mimeType)));
+      final streamed = await _client.send(request)
+          .timeout(ApiConfig.reportTranscriptionTimeoutDuration);
+      final response = await http.Response.fromStream(streamed)
+          .timeout(ApiConfig.reportTranscriptionTimeoutDuration);
+      return _handleResponse(response);
+    } on async.TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (error) {
+      if (error is ApiException) rethrow;
+      throw NetworkException('No se pudo transcribir el audio.');
+    }
+  }
+
+  /// Respuesta binaria autenticada; los errores HTTP conservan la semántica JSON.
+  Future<http.Response> postBinary(String url, {required Object body}) async {
+    try {
+      final headers = await _buildHeaders();
+      headers['Accept'] = '*/*';
+      final response = await _client.post(Uri.parse(url), headers: headers,
+        body: jsonEncode(body)).timeout(ApiConfig.reportExportTimeoutDuration);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        _handleResponse(response);
+      }
+      return response;
+    } on async.TimeoutException {
+      throw TimeoutException();
+    } on http.ClientException {
+      throw NetworkException();
+    } catch (error) {
+      if (error is ApiException) rethrow;
+      throw NetworkException('Error al descargar archivo: $error');
     }
   }
 
@@ -136,9 +181,7 @@ class ApiClient implements ApiClientInterface {
           .timeout(ApiConfig.timeoutDuration);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw NetworkException();
-    } on TimeoutException {
+    } on async.TimeoutException {
       throw TimeoutException();
     } on http.ClientException {
       throw NetworkException();
@@ -160,9 +203,7 @@ class ApiClient implements ApiClientInterface {
           .timeout(ApiConfig.timeoutDuration);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw NetworkException();
-    } on TimeoutException {
+    } on async.TimeoutException {
       throw TimeoutException();
     } on http.ClientException {
       throw NetworkException();
@@ -180,9 +221,7 @@ class ApiClient implements ApiClientInterface {
           .timeout(ApiConfig.timeoutDuration);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw NetworkException();
-    } on TimeoutException {
+    } on async.TimeoutException {
       throw TimeoutException();
     } on http.ClientException {
       throw NetworkException();
