@@ -6,7 +6,10 @@ class UserEntity {
   final String? telefono;
   final int? idRol;
   final String? rolNombre;
+  final String? tenantId;
   final String? estado;
+
+  bool get isPatient => rolNombre?.trim().toUpperCase() == 'PACIENTE';
 
   const UserEntity({
     required this.idUsuario,
@@ -16,6 +19,7 @@ class UserEntity {
     this.telefono,
     this.idRol,
     this.rolNombre,
+    this.tenantId,
     this.estado,
   });
 }

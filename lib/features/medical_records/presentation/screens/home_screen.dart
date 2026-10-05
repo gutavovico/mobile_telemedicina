@@ -11,6 +11,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authController = context.watch<AuthController>();
     final user = authController.currentUser;
+    final isPatient = authController.isPatient;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -25,7 +26,11 @@ class HomeScreen extends StatelessWidget {
                 color: Colors.white24,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.local_hospital_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 10),
             Column(
@@ -57,16 +62,22 @@ class HomeScreen extends StatelessWidget {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     title: const Text('Cerrar sesión'),
-                    content: const Text('¿Estás seguro de que deseas salir de tu cuenta?'),
+                    content: const Text(
+                      '¿Estás seguro de que deseas salir de tu cuenta?',
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(false),
                         child: const Text('Cancelar'),
                       ),
                       ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                        ),
                         onPressed: () => Navigator.of(ctx).pop(true),
                         child: const Text('Cerrar sesión'),
                       ),
@@ -91,7 +102,10 @@ class HomeScreen extends StatelessWidget {
               ),
               style: TextButton.styleFrom(
                 backgroundColor: AppColors.error,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -107,7 +121,9 @@ class HomeScreen extends StatelessWidget {
           children: [
             // Welcome Card
             InkWell(
-              onTap: () => Navigator.of(context).pushNamed('/patient-profile'),
+              onTap: isPatient
+                  ? () => Navigator.of(context).pushNamed('/patient-profile')
+                  : null,
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 width: double.infinity,
@@ -147,7 +163,7 @@ class HomeScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '¡Hola, ${user?.nombres ?? "Paciente"}!',
+                                '¡Hola, ${user?.nombres ?? "Usuario"}!',
                                 style: AppTypography.titleLarge.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -164,13 +180,16 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.secondaryContainer,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            user?.rolNombre?.toUpperCase() ?? 'PACIENTE',
+                            user?.rolNombre?.toUpperCase() ?? 'USUARIO',
                             style: AppTypography.bodySmall.copyWith(
                               color: AppColors.primaryDark,
                               fontWeight: FontWeight.w700,
@@ -187,14 +206,24 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.badge_outlined, color: AppColors.secondaryContainer, size: 20),
-                          SizedBox(width: 8),
+                          const Icon(
+                            Icons.badge_outlined,
+                            color: AppColors.secondaryContainer,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Ver y gestionar mi expediente clínico >',
-                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                              isPatient
+                                  ? 'Ver y gestionar mi expediente clínico >'
+                                  : 'Las recetas y documentos de pacientes se consultan en el portal web.',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -209,7 +238,9 @@ class HomeScreen extends StatelessWidget {
             // Quick Access Section
             Text(
               'Servicios Disponibles',
-              style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
+              style: AppTypography.titleMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 14),
 
@@ -228,13 +259,22 @@ class HomeScreen extends StatelessWidget {
                   color: const Color(0xFF0D9488),
                   onTap: () => Navigator.of(context).pushNamed('/fichas'),
                 ),
-                _buildServiceCard(
-                  icon: Icons.folder_shared_outlined,
-                  title: 'Documentos',
-                  subtitle: 'Recetas y laboratorios CU12',
-                  color: const Color(0xFF2563EB),
-                  onTap: () => Navigator.of(context).pushNamed('/documentos'),
-                ),
+                if (isPatient) ...[
+                  _buildServiceCard(
+                    icon: Icons.folder_shared_outlined,
+                    title: 'Documentos',
+                    subtitle: 'Tus archivos clínicos',
+                    color: const Color(0xFF2563EB),
+                    onTap: () => Navigator.of(context).pushNamed('/documentos'),
+                  ),
+                  _buildServiceCard(
+                    icon: Icons.medication_outlined,
+                    title: 'Mis recetas',
+                    subtitle: 'Consulta y descarga tus recetas',
+                    color: AppColors.secondary,
+                    onTap: () => Navigator.of(context).pushNamed('/recetas'),
+                  ),
+                ],
                 _buildServiceCard(
                   icon: Icons.calendar_month_rounded,
                   title: 'Mis Citas',
@@ -242,13 +282,15 @@ class HomeScreen extends StatelessWidget {
                   color: const Color(0xFFE11D48),
                   onTap: () => Navigator.of(context).pushNamed('/appointments'),
                 ),
-                _buildServiceCard(
-                  icon: Icons.person_outline_rounded,
-                  title: 'Mi Expediente',
-                  subtitle: 'Datos clínicos y contacto',
-                  color: AppColors.primary,
-                  onTap: () => Navigator.of(context).pushNamed('/patient-profile'),
-                ),
+                if (isPatient)
+                  _buildServiceCard(
+                    icon: Icons.person_outline_rounded,
+                    title: 'Mi Expediente',
+                    subtitle: 'Datos clínicos y contacto',
+                    color: AppColors.primary,
+                    onTap: () =>
+                        Navigator.of(context).pushNamed('/patient-profile'),
+                  ),
                 _buildServiceCard(
                   icon: Icons.medical_services_outlined,
                   title: 'Directorio Médico',
@@ -261,7 +303,8 @@ class HomeScreen extends StatelessWidget {
                   title: 'Teleconsultas',
                   subtitle: 'Atención virtual en tiempo real',
                   color: AppColors.secondary,
-                  onTap: () => Navigator.of(context).pushNamed('/communications'),
+                  onTap: () =>
+                      Navigator.of(context).pushNamed('/communications'),
                 ),
                 _buildServiceCard(
                   icon: Icons.chat_bubble_outline_rounded,

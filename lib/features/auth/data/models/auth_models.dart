@@ -4,10 +4,7 @@ class LoginRequest {
   final String correo;
   final String password;
 
-  LoginRequest({
-    required this.correo,
-    required this.password,
-  });
+  LoginRequest({required this.correo, required this.password});
 
   Map<String, dynamic> toJson() => {
     'correo': correo.trim(),
@@ -76,12 +73,14 @@ class UserModel extends UserEntity {
     super.telefono,
     super.idRol,
     super.rolNombre,
+    super.tenantId,
     dynamic estado,
   }) : super(estado: estado?.toString());
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final rol = json['rol'];
     return UserModel(
       idUsuario: json['id_usuario'] is int
           ? json['id_usuario']
@@ -93,7 +92,14 @@ class UserModel extends UserEntity {
       idRol: json['id_rol'] is int
           ? json['id_rol']
           : int.tryParse(json['id_rol']?.toString() ?? ''),
-      rolNombre: json['rol_nombre'] ?? json['rol']?['nombre'],
+      rolNombre:
+          json['rol_nombre'] ??
+          (rol is String
+              ? rol
+              : rol is Map
+              ? rol['nombre'] as String?
+              : null),
+      tenantId: (json['tenant_id'] ?? json['id_clinica'])?.toString(),
       estado: json['estado'],
     );
   }
@@ -106,6 +112,7 @@ class UserModel extends UserEntity {
     'telefono': telefono,
     'id_rol': idRol,
     'rol_nombre': rolNombre,
+    'tenant_id': tenantId,
     'estado': estado,
   };
 }
@@ -115,9 +122,7 @@ class ForgotPasswordRequest {
 
   ForgotPasswordRequest({required this.correo});
 
-  Map<String, dynamic> toJson() => {
-    'correo': correo.trim(),
-  };
+  Map<String, dynamic> toJson() => {'correo': correo.trim()};
 }
 
 class ResetPasswordRequest {
@@ -142,10 +147,7 @@ class ForgotPasswordResponse {
   final String detail;
   final String? debugCode;
 
-  ForgotPasswordResponse({
-    required this.detail,
-    this.debugCode,
-  });
+  ForgotPasswordResponse({required this.detail, this.debugCode});
 
   factory ForgotPasswordResponse.fromJson(Map<String, dynamic> json) {
     return ForgotPasswordResponse(

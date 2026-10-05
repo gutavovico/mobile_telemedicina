@@ -15,23 +15,30 @@ class ApiClient implements ApiClientInterface {
 
   final http.Client _client = http.Client();
   final SecureStorageService _storage = SecureStorageService();
+  String? _sessionAccessToken;
 
-  Future<Map<String, String>> _buildHeaders({bool includeAuth = true, Map<String, String>? extraHeaders}) async {
+  void setSessionAccessToken(String token) => _sessionAccessToken = token;
+
+  void clearSessionAccessToken() => _sessionAccessToken = null;
+
+  Future<Map<String, String>> _buildHeaders({
+    bool includeAuth = true,
+    Map<String, String>? extraHeaders,
+  }) async {
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
     if (includeAuth) {
-      final token = await _storage.getAccessToken();
+      final token = _sessionAccessToken ?? await _storage.getAccessToken();
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
-    }
-
-    final tenantId = await _storage.getTenantId();
-    if (tenantId != null && tenantId.isNotEmpty) {
-      headers['X-Tenant-ID'] = tenantId;
+      final tenantId = await _storage.getTenantId();
+      if (tenantId != null && tenantId.isNotEmpty) {
+        headers['X-Tenant-ID'] = tenantId;
+      }
     }
 
     if (extraHeaders != null) {
@@ -42,7 +49,11 @@ class ApiClient implements ApiClientInterface {
   }
 
   @override
-  Future<dynamic> get(String url, {bool includeAuth = true, String? authToken}) async {
+  Future<dynamic> get(
+    String url, {
+    bool includeAuth = true,
+    String? authToken,
+  }) async {
     try {
       final headers = await _buildHeaders(includeAuth: includeAuth);
       if (authToken != null && authToken.isNotEmpty) {
@@ -86,8 +97,14 @@ class ApiClient implements ApiClientInterface {
       } catch (_) {
         decodedBody = response.body;
       }
-      final errorMessage = _extractErrorMessage(decodedBody, response.statusCode);
-      throw ApiException(message: errorMessage, statusCode: response.statusCode);
+      final errorMessage = _extractErrorMessage(
+        decodedBody,
+        response.statusCode,
+      );
+      throw ApiException(
+        message: errorMessage,
+        statusCode: response.statusCode,
+      );
     } on SocketException {
       throw NetworkException();
     } on TimeoutException {
@@ -100,7 +117,11 @@ class ApiClient implements ApiClientInterface {
     }
   }
 
-  Future<dynamic> post(String url, {dynamic body, bool includeAuth = true}) async {
+  Future<dynamic> post(
+    String url, {
+    dynamic body,
+    bool includeAuth = true,
+  }) async {
     try {
       final headers = await _buildHeaders(includeAuth: includeAuth);
       final response = await _client
@@ -124,7 +145,11 @@ class ApiClient implements ApiClientInterface {
     }
   }
 
-  Future<dynamic> patch(String url, {dynamic body, bool includeAuth = true}) async {
+  Future<dynamic> patch(
+    String url, {
+    dynamic body,
+    bool includeAuth = true,
+  }) async {
     try {
       final headers = await _buildHeaders(includeAuth: includeAuth);
       final response = await _client
@@ -148,7 +173,11 @@ class ApiClient implements ApiClientInterface {
     }
   }
 
-  Future<dynamic> put(String url, {dynamic body, bool includeAuth = true}) async {
+  Future<dynamic> put(
+    String url, {
+    dynamic body,
+    bool includeAuth = true,
+  }) async {
     try {
       final headers = await _buildHeaders(includeAuth: includeAuth);
       final response = await _client
@@ -210,7 +239,11 @@ class ApiClient implements ApiClientInterface {
 
     switch (response.statusCode) {
       case 400:
-        throw ApiException(message: errorMessage, statusCode: 400, details: decodedBody);
+        throw ApiException(
+          message: errorMessage,
+          statusCode: 400,
+          details: decodedBody,
+        );
       case 401:
         throw UnauthorizedException(errorMessage);
       case 403:

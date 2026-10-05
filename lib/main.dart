@@ -14,15 +14,19 @@ import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/reset_password_screen.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
+import 'features/auth/presentation/widgets/patient_only_route.dart';
 import 'features/communications/presentation/screens/communications_screen.dart';
 import 'features/medical_records/presentation/providers/clinical_documents_provider.dart';
 import 'features/medical_records/presentation/providers/ficha_provider.dart';
 import 'features/medical_records/presentation/providers/patient_provider.dart';
+import 'features/medical_records/presentation/providers/prescription_provider.dart';
 import 'features/medical_records/presentation/screens/book_ficha_screen.dart';
 import 'features/medical_records/presentation/screens/documents_list_screen.dart';
 import 'features/medical_records/presentation/screens/fichas_screen.dart';
 import 'features/medical_records/presentation/screens/home_screen.dart';
+import 'features/medical_records/presentation/screens/mis_recetas_screen.dart';
 import 'features/medical_records/presentation/screens/patient_profile_screen.dart';
+import 'features/medical_records/presentation/session/prescription_session_coordinator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,11 +56,29 @@ class TelemedicinaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => FichaProvider()),
         ChangeNotifierProvider(create: (_) => ClinicalDocumentsProvider()),
+        // CU16: el provider emite `sessionExpired` una sola vez por ciclo ante 401.
+        // El coordinador reutiliza AuthController.logout (limpieza segura) y
+        // redirige a /login sin navegar desde Domain/Data.
+        // Sincronización explícita del ciclo de autenticación (sin JWT):
+        // solo false -> true re-arma el evento 401; un éxito nunca lo limpia.
+        ChangeNotifierProxyProvider<AuthController, PrescriptionProvider>(
+          create: (_) => PrescriptionProvider(),
+          update: (_, auth, prescription) {
+            final provider = prescription ?? PrescriptionProvider();
+            provider.onSessionExpired = () => handlePrescriptionSessionExpired(
+              authController: auth,
+              navigatorKey: prescriptionNavigatorKey,
+            );
+            provider.syncAuthSession(isAuthenticated: auth.isAuthenticated);
+            return provider;
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'Hospital San Juan de Dios - Telemedicina',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        navigatorKey: prescriptionNavigatorKey,
         initialRoute: '/',
         routes: {
           '/': (context) => const SplashScreen(),
@@ -65,14 +87,19 @@ class TelemedicinaApp extends StatelessWidget {
           '/forgot-password': (context) => const ForgotPasswordScreen(),
           '/reset-password': (context) => const ResetPasswordScreen(),
           '/home': (context) => const HomeScreen(),
-          '/patient-profile': (context) => const PatientProfileScreen(),
+          '/patient-profile': (context) =>
+              const PatientOnlyRoute(child: PatientProfileScreen()),
           '/doctors': (context) => const DoctorCatalogScreen(),
           '/appointments': (context) => const AppointmentsScreen(),
           '/citas': (context) => const AppointmentsScreen(),
           '/fichas': (context) => const FichasScreen(),
           '/fichas/nueva': (context) => const BookFichaScreen(),
-          '/documentos': (context) => const DocumentsListScreen(),
-          '/mis-documentos': (context) => const DocumentsListScreen(),
+          '/documentos': (context) =>
+              const PatientOnlyRoute(child: DocumentsListScreen()),
+          '/mis-documentos': (context) =>
+              const PatientOnlyRoute(child: DocumentsListScreen()),
+          '/recetas': (context) =>
+              const PatientOnlyRoute(child: MisRecetasScreen()),
           '/communications': (context) => const CommunicationsScreen(),
           '/analytics': (context) => const AnalyticsScreen(),
           '/ai-assistant': (context) => const AiAssistantScreen(),
