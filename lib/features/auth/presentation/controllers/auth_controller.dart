@@ -1,9 +1,12 @@
+import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import '../../../../core/network/api_exceptions.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/config/api_config.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/models/auth_models.dart';
+import '../../domain/entities/user_entity.dart';
 
 class AuthController extends ChangeNotifier {
   final AuthRemoteDataSource _remoteDataSource;
@@ -18,12 +21,18 @@ class AuthController extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   bool _isCheckingAuth = true;
+  bool _profileVerified = false;
+  bool _reportsAuthorized = false;
+  bool _isLoggingOut = false;
+  int _sessionEpoch = 0;
+  int _reportsCheckEpoch = 0;
   String? _errorMessage;
   String? _successMessage;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isCheckingAuth => _isCheckingAuth;
+  bool get isProfileVerified => _profileVerified;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   bool get isAuthenticated => _currentUser != null;
@@ -36,6 +45,66 @@ class AuthController extends ChangeNotifier {
     } else {
       await _storageService.clearTenantId();
     }
+  }
+
+  bool get canAccessReports {
+    return _profileVerified && _reportsAuthorized && eligibleForReports(_currentUser);
+  }
+  static bool eligibleForReports(UserEntity? user) {
+    if (user == null || user.idClinica == null ||
+        user.estado?.toLowerCase() != 'activo') return false;
+    final role = (user.rolNombre ?? '').trim().toUpperCase()
+        .replaceAll('Ó', 'O').replaceAll('Á', 'A');
+    return const {'ADMIN', 'ADMINISTRADOR', 'ADMINISTRACION'}.contains(role);
+  }
+  String? get reportsAccountKey => canAccessReports
+      ? '${_currentUser!.idUsuario}:${_currentUser!.idClinica}' : null;
+
+  Future<void> verifyReportsAccess() async {
+    final epoch = _sessionEpoch;
+    final check = ++_reportsCheckEpoch;
+    _reportsAuthorized = false;
+    notifyListeners();
+    if (!_profileVerified || !eligibleForReports(_currentUser)) {
+      return;
+    }
+    try {
+      await ApiClient().get(ApiConfig.reportCatalogUrl);
+      if (epoch != _sessionEpoch || check != _reportsCheckEpoch) return;
+      _reportsAuthorized = true;
+    } on UnauthorizedException {
+      if (epoch != _sessionEpoch || check != _reportsCheckEpoch) return;
+      await handleReportsUnauthorized();
+      return;
+    } catch (_) {
+      if (epoch != _sessionEpoch || check != _reportsCheckEpoch) return;
+      _reportsAuthorized = false;
+    }
+    notifyListeners();
+  }
+
+  void denyReportsAccess() {
+    ++_reportsCheckEpoch;
+    _reportsAuthorized = false;
+    notifyListeners();
+  }
+
+  // A 401 from analytics alone does not establish that the whole session ended.
+  Future<void> handleReportsUnauthorized() async {
+    final epoch = _sessionEpoch;
+    denyReportsAccess();
+    try {
+      final user = await _remoteDataSource.getMe();
+      if (epoch != _sessionEpoch) return;
+      _currentUser = user;
+      _profileVerified = true;
+      notifyListeners();
+    } on UnauthorizedException {
+      if (epoch == _sessionEpoch) await logout();
+    } catch (_) {
+      // Keep the established session; reports remain unavailable until retried.
+    }
+  }
   }
 
   void clearMessages() {
@@ -58,32 +127,77 @@ class AuthController extends ChangeNotifier {
 
   // Check saved session on app launch
   Future<bool> checkAuthStatus() async {
+    if (_isLoggingOut) return false;
+    final epoch = ++_sessionEpoch;
+    ++_reportsCheckEpoch;
+    _profileVerified = false;
+    _reportsAuthorized = false;
     _isCheckingAuth = true;
     notifyListeners();
 
     try {
-      final token = await _storageService.getAccessToken();
-      if (token == null || token.isEmpty) {
-        ApiClient().clearSessionAccessToken();
+      final hasSessionToken = ApiClient().hasSessionAccessToken;
+      final token = hasSessionToken ? null : await _storageService.getAccessToken();
+      if (epoch != _sessionEpoch) return false;
+      if (!hasSessionToken && (token == null || token.isEmpty)) {
+        await _storageService.clearSession();
+        if (epoch != _sessionEpoch) return false;
+        ApiClient().setSessionAccessToken(null);
         _currentUser = null;
         _isCheckingAuth = false;
         notifyListeners();
         return false;
       }
+      if (token != null && token.isNotEmpty) {
+        ApiClient().setSessionAccessToken(token);
+      }
 
-      // A cached role is never sufficient to open patient-only routes.
-      ApiClient().setSessionAccessToken(token);
-      final user = await _remoteDataSource.getMe();
-      await _saveTenantFromProfile(user);
-      await _storageService.saveUser(user.toJson());
-      _currentUser = user;
+      // Try reading locally cached user first for faster load
+      final cachedUser = hasSessionToken ? null : await _storageService.getUser();
+      if (epoch != _sessionEpoch) return false;
+      if (cachedUser != null) {
+        _currentUser = UserModel.fromJson(cachedUser);
+        notifyListeners();
+      }
+
+      // Verify token with backend
+      try {
+        final user = await _remoteDataSource.getMe();
+        if (epoch != _sessionEpoch) return false;
+        _currentUser = user;
+        _profileVerified = true;
+        await _saveTenantFromProfile(user);
+        if (!hasSessionToken && await _storageService.getRememberMe()) {
+          if (epoch != _sessionEpoch) return false;
+          await _storageService.saveUser(user.toJson());
+        }
+        if (epoch != _sessionEpoch) return false;
+        unawaited(verifyReportsAccess());
+      } catch (e) {
+        if (epoch != _sessionEpoch) return false;
+        // If 401, session is invalid
+        if (e is UnauthorizedException) {
+          await _storageService.clearSession();
+          if (epoch != _sessionEpoch) return false;
+          ApiClient().setSessionAccessToken(null);
+          _currentUser = null;
+          _profileVerified = false;
+          _reportsAuthorized = false;
+          _isCheckingAuth = false;
+          notifyListeners();
+          return false;
+        }
+      }
 
       _isCheckingAuth = false;
       notifyListeners();
       return _currentUser != null;
     } catch (_) {
       ApiClient().clearSessionAccessToken();
+      if (epoch != _sessionEpoch) return false;
       _currentUser = null;
+      _profileVerified = false;
+      _reportsAuthorized = false;
       _isCheckingAuth = false;
       notifyListeners();
       return false;
@@ -91,18 +205,23 @@ class AuthController extends ChangeNotifier {
   }
 
   // Login
-  Future<bool> login(
-    String correo,
-    String password, {
-    bool rememberMe = true,
-  }) async {
+  Future<bool> login(String correo, String password, {bool rememberMe = true}) async {
+    if (_isLoggingOut) return false;
+    final epoch = ++_sessionEpoch;
+    ++_reportsCheckEpoch;
+    _currentUser = null;
+    _profileVerified = false;
+    _reportsAuthorized = false;
     _isLoading = true;
+    _isCheckingAuth = false;
     _errorMessage = null;
     _successMessage = null;
     notifyListeners();
 
-    var tokenIssued = false;
     try {
+      ApiClient().setSessionAccessToken(null);
+      await _storageService.clearSession();
+      if (epoch != _sessionEpoch) return false;
       final request = LoginRequest(correo: correo, password: password);
       final tokenResponse = await _remoteDataSource.login(request);
       if (tokenResponse.accessToken.isEmpty) {
@@ -110,43 +229,59 @@ class AuthController extends ChangeNotifier {
           'El backend no devolvió un token de acceso',
         );
       }
-      tokenIssued = true;
-      await _storageService.clearSession();
+      if (epoch != _sessionEpoch) return false;
       ApiClient().setSessionAccessToken(tokenResponse.accessToken);
 
-      if (rememberMe) {
-        await _storageService.saveTokens(
-          accessToken: tokenResponse.accessToken,
-          refreshToken: tokenResponse.refreshToken,
-        );
-      }
+      // Guardar tokens siempre para mantener la sesión HTTP activa
+      await _storageService.saveTokens(
+        accessToken: tokenResponse.accessToken,
+        refreshToken: tokenResponse.refreshToken,
+      );
+      if (epoch != _sessionEpoch) return false;
       await _storageService.setRememberMe(rememberMe);
+      if (epoch != _sessionEpoch) return false;
 
-      // Fetch user details
+      if (tokenResponse.tenantId != null && tokenResponse.tenantId!.isNotEmpty) {
+        await _storageService.saveTenantId(tokenResponse.tenantId!);
+        if (epoch != _sessionEpoch) return false;
+      }
+
+      // Obtener datos del usuario en sesión
       final user = await _remoteDataSource.getMe();
-      await _saveTenantFromProfile(user);
+      if (epoch != _sessionEpoch) return false;
       _currentUser = user;
+      _profileVerified = true;
+      await _saveTenantFromProfile(user);
+
+      // Si el login no trajo tenant_id, derivarlo de id_clinica o tenant_id de /auth/me
+      final currentTenant = await _storageService.getTenantId();
+      if (user.idClinica != null) {
+        await _storageService.saveTenantId(user.idClinica.toString());
+      } else if (currentTenant == null || currentTenant.isEmpty) {
+        await _storageService.saveTenantId('1');
+      }
+      if (epoch != _sessionEpoch) return false;
       if (rememberMe) {
         await _storageService.saveUser(user.toJson());
       }
+      if (epoch != _sessionEpoch) return false;
+      unawaited(verifyReportsAccess());
 
       _isLoading = false;
       notifyListeners();
       return true;
     } on ApiException catch (e) {
-      if (tokenIssued) {
-        ApiClient().clearSessionAccessToken();
-        await _storageService.clearSession();
-      }
+      if (epoch != _sessionEpoch) return false;
+      ApiClient().setSessionAccessToken(null);
+      await _storageService.clearSession();
       _errorMessage = e.message;
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
-      if (tokenIssued) {
-        ApiClient().clearSessionAccessToken();
-        await _storageService.clearSession();
-      }
+      if (epoch != _sessionEpoch) return false;
+      ApiClient().setSessionAccessToken(null);
+      await _storageService.clearSession();
       _errorMessage = 'Ocurrió un error inesperado al iniciar sesión.';
       _isLoading = false;
       notifyListeners();
@@ -269,16 +404,33 @@ class AuthController extends ChangeNotifier {
 
   // Logout
   Future<void> logout() async {
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
+    ++_sessionEpoch;
+    ++_reportsCheckEpoch;
+    _currentUser = null;
+    _profileVerified = false;
+    _reportsAuthorized = false;
+    _isLoading = false;
+    _isCheckingAuth = false;
+    notifyListeners();
     try {
       await _remoteDataSource.logout();
     } catch (_) {
       // Best-effort remote token invalidation
+    } finally {
+      ApiClient().setSessionAccessToken(null);
+      try {
+        await _storageService.clearSession();
+      } catch (_) {
+        // Still finish local logout if storage is unavailable.
+      }
+      _currentUser = null;
+      _errorMessage = null;
+      _successMessage = null;
+      _isLoggingOut = false;
+      notifyListeners();
     }
-    ApiClient().clearSessionAccessToken();
-    await _storageService.clearSession();
-    _currentUser = null;
-    _errorMessage = null;
-    _successMessage = null;
-    notifyListeners();
+
   }
 }

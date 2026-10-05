@@ -1,5 +1,4 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 
 class ApiConfig {
   static const String _configuredBaseUrl = String.fromEnvironment(
@@ -13,14 +12,14 @@ class ApiConfig {
           : _configuredBaseUrl;
     }
     if (kIsWeb) {
+      // Backend local para desarrollo Web (Edge / Chrome)
       return 'http://127.0.0.1:8000';
     }
-    if (Platform.isAndroid) {
-      // 10.0.2.2 points to host machine loopback in Android Emulator
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // 10.0.2.2 apunta al loopback del host en el Emulador Android
       return 'http://10.0.2.2:8000';
     }
-    // iOS simulator and desktop. For a physical device, pass the host LAN URL:
-    // flutter run --dart-define=API_BASE_URL=http://192.168.x.x:8000
+    // iOS simulator / Desktop / dispositivo físico (configurable con --dart-define=API_BASE_URL=...)
     return 'http://127.0.0.1:8000';
   }
 
@@ -58,6 +57,27 @@ class ApiConfig {
   static String prescriptionDetailUrl(int id) => '$baseUrl/api/v1/recetas/$id';
   static String prescriptionPdfUrl(int id) => '$baseUrl/api/v1/recetas/$id/pdf';
 
+  // Teleconsulta y Chat de Cita Médica (CU15)
+  static String teleconsultaUrl(int idCita) => '$baseUrl/api/v1/citas/$idCita/teleconsulta';
+  static String get myTeleconsultaUrl => '$baseUrl/api/v1/citas/me/teleconsulta';
+  static String chatMensajesUrl(int idCita) => '$baseUrl/api/v1/citas/$idCita/chat/mensajes';
+
+  // CU22/CU27 reportes; el backend resuelve id_clinica desde la sesión.
+  static String get reportCatalogUrl => '$baseUrl/analytics/reportes/catalogo';
+  static String get reportOptionsUrl => '$baseUrl/analytics/reportes/opciones';
+  static String get reportQueryUrl => '$baseUrl/analytics/reportes/consulta';
+  static String get reportExportUrl => '$baseUrl/analytics/reportes/exportar';
+  static String get reportInterpretUrl => '$baseUrl/analytics/reportes/interpretar';
+  static String get reportTranscribeUrl => '$baseUrl/analytics/reportes/transcribir';
+  // Fila virtual y tiempos de espera (CU08)
+  static String get liveQueueUrl => '$baseUrl/api/v1/cola';
+  static String get miTurnoUrl => '$baseUrl/api/v1/cola/mi-turno';
+  static String avanzarColaUrl(int idCita) => '$baseUrl/api/v1/cola/$idCita/avanzar';
+  static String perdidaColaUrl(int idCita) => '$baseUrl/api/v1/cola/$idCita/perdida';
+  static String get pausasColaUrl => '$baseUrl/api/v1/cola/pausas';
+
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
+  static const Duration reportExportTimeoutDuration = Duration(seconds: 60);
+  static const Duration reportTranscriptionTimeoutDuration = Duration(seconds: 60);
 }

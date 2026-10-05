@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/ai_assistant/presentation/screens/ai_assistant_screen.dart';
-import 'features/analytics/presentation/screens/analytics_screen.dart';
+import 'features/analytics/reportes/presentation/screens/reports_screen.dart';
 import 'features/appointments/presentation/controllers/doctor_controller.dart';
 import 'features/appointments/presentation/providers/appointment_provider.dart';
 import 'features/appointments/presentation/screens/appointments_screen.dart';
@@ -27,6 +27,12 @@ import 'features/medical_records/presentation/screens/home_screen.dart';
 import 'features/medical_records/presentation/screens/mis_recetas_screen.dart';
 import 'features/medical_records/presentation/screens/patient_profile_screen.dart';
 import 'features/medical_records/presentation/session/prescription_session_coordinator.dart';
+
+import 'features/appointments/presentation/screens/mis_citas_screen.dart';
+import 'features/cola_virtual/presentation/providers/cola_provider.dart';
+import 'features/cola_virtual/presentation/screens/cola_operativa_screen.dart';
+import 'features/cola_virtual/presentation/screens/mi_turno_screen.dart';
+import 'features/teleconsulta/presentation/providers/teleconsulta_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +60,8 @@ class TelemedicinaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PatientProvider()),
         ChangeNotifierProvider(create: (_) => DoctorController()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
+        ChangeNotifierProvider(create: (_) => TeleconsultaProvider()),
+        ChangeNotifierProvider(create: (_) => ColaProvider()),
         ChangeNotifierProvider(create: (_) => FichaProvider()),
         ChangeNotifierProvider(create: (_) => ClinicalDocumentsProvider()),
         // CU16: el provider emite `sessionExpired` una sola vez por ciclo ante 401.
@@ -91,7 +99,10 @@ class TelemedicinaApp extends StatelessWidget {
               const PatientOnlyRoute(child: PatientProfileScreen()),
           '/doctors': (context) => const DoctorCatalogScreen(),
           '/appointments': (context) => const AppointmentsScreen(),
-          '/citas': (context) => const AppointmentsScreen(),
+          '/citas': (context) => const MisCitasScreen(),
+          '/mis-citas': (context) => const MisCitasScreen(),
+          '/mi-cola': (context) => const MiTurnoScreen(),
+          '/cola': (context) => const ColaOperativaScreen(),
           '/fichas': (context) => const FichasScreen(),
           '/fichas/nueva': (context) => const BookFichaScreen(),
           '/documentos': (context) =>
@@ -101,7 +112,7 @@ class TelemedicinaApp extends StatelessWidget {
           '/recetas': (context) =>
               const PatientOnlyRoute(child: MisRecetasScreen()),
           '/communications': (context) => const CommunicationsScreen(),
-          '/analytics': (context) => const AnalyticsScreen(),
+          '/analytics': (context) => const ReportsScreen(),
           '/ai-assistant': (context) => const AiAssistantScreen(),
         },
       ),

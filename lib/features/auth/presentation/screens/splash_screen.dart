@@ -50,6 +50,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     if (!mounted) return;
     if (isAuthenticated) {
+      // CU23: si se restaura una sesion guardada, tambien hay que vigilar la
+      // inactividad, o el usuario volveria a entrar sin control de expiracion.
+      authController.startInactivityControl();
       Navigator.of(context).pushReplacementNamed('/home');
     } else {
       Navigator.of(context).pushReplacementNamed('/login');

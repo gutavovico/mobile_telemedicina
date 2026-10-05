@@ -50,15 +50,9 @@ class AppointmentProvider with ChangeNotifier {
 
     try {
       final remoteList = await _dataSource.getAppointments();
-      if (remoteList.isNotEmpty) {
-        _appointments = remoteList;
-      } else if (_appointments.isEmpty) {
-        _loadDemoAppointments();
-      }
+      _appointments = remoteList;
     } catch (e) {
-      if (_appointments.isEmpty) {
-        _loadDemoAppointments();
-      }
+      _errorMessage = 'Error al cargar citas: ${e.toString()}';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -72,44 +66,6 @@ class AppointmentProvider with ChangeNotifier {
     } catch (_) {}
   }
 
-  void _loadDemoAppointments() {
-    _appointments = [
-      AppointmentModel(
-        idCita: 1,
-        idPaciente: 1,
-        idMedico: 1,
-        idEspecialidad: 1,
-        fechaCita: '2024-10-15',
-        horaInicio: '09:30',
-        horaFin: '10:00',
-        motivo: 'Control cardiológico anual',
-        estado: 'CONFIRMADA',
-        tipoConsulta: 'TELEMEDICINA',
-        pacienteNombre: 'Maria Rodriguez',
-        pacienteCi: '982-11-2',
-        pacienteIniciales: 'MR',
-        medicoNombre: 'Dr. Carlos Mendoza',
-        especialidadNombre: 'Cardiología',
-      ),
-      AppointmentModel(
-        idCita: 2,
-        idPaciente: 2,
-        idMedico: 2,
-        idEspecialidad: 2,
-        fechaCita: '2024-10-15',
-        horaInicio: '11:00',
-        horaFin: '11:30',
-        motivo: 'Evaluación de síntomas gripales',
-        estado: 'PENDIENTE',
-        tipoConsulta: 'TELEMEDICINA',
-        pacienteNombre: 'Juan Gómez',
-        pacienteCi: '451-88-9',
-        pacienteIniciales: 'JG',
-        medicoNombre: 'Dra. Ana Silva',
-        especialidadNombre: 'Medicina General',
-      ),
-    ];
-  }
 
   void search(String query) {
     _searchQuery = query;

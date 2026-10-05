@@ -1,21 +1,30 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../medical_records/domain/entities/clinical_document.dart';
 import '../../../medical_records/domain/usecases/download_document_usecase.dart';
 import '../../../medical_records/domain/usecases/get_document_detail_usecase.dart';
 import '../../../medical_records/domain/usecases/get_my_documents_usecase.dart';
+import '../../../medical_records/domain/usecases/get_patient_documents_usecase.dart';
+import '../../../medical_records/domain/usecases/get_tenant_documents_usecase.dart';
 import '../../../../core/network/api_exceptions.dart';
 
 class ClinicalDocumentsProvider extends ChangeNotifier {
   final GetMyDocumentsUseCase _getMyDocumentsUseCase;
+  final GetTenantDocumentsUseCase _getTenantDocumentsUseCase;
+  final GetPatientDocumentsUseCase _getPatientDocumentsUseCase;
   final GetDocumentDetailUseCase _getDocumentDetailUseCase;
   final DownloadDocumentUseCase _downloadDocumentUseCase;
 
   ClinicalDocumentsProvider({
     GetMyDocumentsUseCase? getMyDocumentsUseCase,
+    GetTenantDocumentsUseCase? getTenantDocumentsUseCase,
+    GetPatientDocumentsUseCase? getPatientDocumentsUseCase,
     GetDocumentDetailUseCase? getDocumentDetailUseCase,
     DownloadDocumentUseCase? downloadDocumentUseCase,
   })  : _getMyDocumentsUseCase = getMyDocumentsUseCase ?? GetMyDocumentsUseCase(),
+        _getTenantDocumentsUseCase = getTenantDocumentsUseCase ?? GetTenantDocumentsUseCase(),
+        _getPatientDocumentsUseCase = getPatientDocumentsUseCase ?? GetPatientDocumentsUseCase(),
         _getDocumentDetailUseCase = getDocumentDetailUseCase ?? GetDocumentDetailUseCase(),
         _downloadDocumentUseCase = downloadDocumentUseCase ?? DownloadDocumentUseCase();
 
@@ -52,7 +61,10 @@ class ClinicalDocumentsProvider extends ChangeNotifier {
     loadDocuments();
   }
 
-  Future<void> loadDocuments({bool reset = true}) async {
+  /// Carga documentos según el rol del usuario autenticado
+  /// - PACIENTE: usa /api/v1/documentos/me (sus propios documentos)
+  /// - MEDICO/ADMIN/RECEPCION: usa /api/v1/documentos (documentos del tenant)
+  Future<void> loadDocuments({bool reset = true, AuthController? authController}) async {
     if (reset) {
       _page = 1;
       _totalPages = 1;
@@ -64,11 +76,29 @@ class ClinicalDocumentsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _getMyDocumentsUseCase(
-        page: _page,
-        pageSize: 20,
-        tipoDocumento: _activeTipoDocumento,
-      );
+      DocumentoPaginado result;
+      final userRole = authController?.userRole ?? 'PACIENTE';
+
+      if (userRole == 'paciente') {
+        // Paciente: solo sus documentos
+        result = await _getMyDocumentsUseCase(
+          page: _page,
+          pageSize: 20,
+          tipoDocumento: _activeTipoDocumento,
+        );
+      } else {
+        // Médico/Admin/Recepción: documentos del tenant con filtros
+        result = await _getTenantDocumentsUseCase(
+          page: _page,
+          pageSize: 20,
+          tipoDocumento: _activeTipoDocumento,
+          q: null,
+          idPaciente: null,
+          fechaDesde: null,
+          fechaHasta: null,
+        );
+      }
+
       _documents = reset ? result.items : [...?_documents, ...result.items];
       _totalPages = result.totalPages;
       _hasMore = _page < result.totalPages;

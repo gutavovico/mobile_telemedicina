@@ -72,15 +72,34 @@ class UserModel extends UserEntity {
     required super.correo,
     super.telefono,
     super.idRol,
+    super.idClinica,
     super.rolNombre,
     super.tenantId,
     dynamic estado,
-  }) : super(estado: estado?.toString());
+  }) : super(
+          estado: estado is bool
+              ? (estado ? 'activo' : 'inactivo')
+              : estado?.toString(),
+        );
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    final rol = json['rol'];
+    String? rolParsed;
+    if (json['rol_nombre'] != null) {
+      rolParsed = json['rol_nombre']?.toString();
+    } else if (json['rol'] != null) {
+      if (json['rol'] is Map) {
+        rolParsed = (json['rol'] as Map)['nombre']?.toString();
+      } else {
+        rolParsed = json['rol']?.toString();
+      }
+    }
+
+    final idClinica = json['id_clinica'] is int
+        ? json['id_clinica'] as int
+        : int.tryParse(json['id_clinica']?.toString() ?? '');
+
     return UserModel(
       idUsuario: json['id_usuario'] is int
           ? json['id_usuario']
@@ -88,17 +107,12 @@ class UserModel extends UserEntity {
       nombres: json['nombres'] ?? '',
       apellidos: json['apellidos'] ?? '',
       correo: json['correo'] ?? '',
-      telefono: json['telefono'],
+      telefono: json['telefono']?.toString(),
       idRol: json['id_rol'] is int
           ? json['id_rol']
           : int.tryParse(json['id_rol']?.toString() ?? ''),
-      rolNombre:
-          json['rol_nombre'] ??
-          (rol is String
-              ? rol
-              : rol is Map
-              ? rol['nombre'] as String?
-              : null),
+      idClinica: idClinica,
+      rolNombre: rolParsed,
       tenantId: (json['tenant_id'] ?? json['id_clinica'])?.toString(),
       estado: json['estado'],
     );
@@ -111,6 +125,7 @@ class UserModel extends UserEntity {
     'correo': correo,
     'telefono': telefono,
     'id_rol': idRol,
+    'id_clinica': idClinica,
     'rol_nombre': rolNombre,
     'tenant_id': tenantId,
     'estado': estado,
@@ -120,9 +135,36 @@ class UserModel extends UserEntity {
 class ForgotPasswordRequest {
   final String correo;
 
-  ForgotPasswordRequest({required this.correo});
+  /// Canal de entrega del codigo de recuperacion (CU23): `email` o `sms`.
+  final String canal;
 
-  Map<String, dynamic> toJson() => {'correo': correo.trim()};
+  ForgotPasswordRequest({required this.correo, this.canal = 'email'});
+
+  Map<String, dynamic> toJson() => {
+    'correo': correo.trim(),
+    'canal': canal,
+  };
+}
+
+/// Estado de inactividad de la sesion actual (CU23).
+class SessionStatusResponse {
+  final int segundosRestantes;
+  final int ventanaSegundos;
+  final int avisoSegundos;
+
+  SessionStatusResponse({
+    required this.segundosRestantes,
+    required this.ventanaSegundos,
+    required this.avisoSegundos,
+  });
+
+  factory SessionStatusResponse.fromJson(Map<String, dynamic> json) {
+    return SessionStatusResponse(
+      segundosRestantes: (json['segundos_restantes'] as num?)?.toInt() ?? 0,
+      ventanaSegundos: (json['ventana_segundos'] as num?)?.toInt() ?? 0,
+      avisoSegundos: (json['aviso_segundos'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 class ResetPasswordRequest {

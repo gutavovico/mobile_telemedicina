@@ -24,6 +24,15 @@ class FakeApiClient implements ApiClientInterface {
   }
 
   @override
+  Future<dynamic> post(
+    String url, {
+    dynamic body,
+    bool includeAuth = true,
+  }) async {
+    return null;
+  }
+
+  @override
   Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
     if (downloadError != null) throw downloadError!;
     return downloadResponse;

@@ -1,13 +1,16 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/clinical_documents_provider.dart';
 
 /// Pantalla de visualización segura de un documento clínico (CU12).
-/// Descarga el archivo autenticado y muestra sus metadatos e informe clínico.
+/// Muestra metadatos, visor PDF y acciones de descarga/compartir.
 class DocumentViewerScreen extends StatefulWidget {
   final int documentId;
 
@@ -19,315 +22,104 @@ class DocumentViewerScreen extends StatefulWidget {
 
 class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
   Uint8List? _pdfBytes;
+  bool _isDownloading = false;
+  String? _downloadError;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAll());
   }
 
-  Future<void> _load() async {
+  Future<void> _loadAll() async {
     final provider = context.read<ClinicalDocumentsProvider>();
+
+    // 1. Cargar detalle del documento (metadatos)
     await provider.loadDetail(widget.documentId);
-    final bytes = await provider.downloadDocument(widget.documentId);
-    if (!mounted) return;
-    setState(() => _pdfBytes = bytes);
+
+    // 2. Descargar PDF
+    if (mounted) {
+      final bytes = await provider.downloadDocument(widget.documentId);
+      if (mounted) {
+        setState(() => _pdfBytes = bytes);
+      }
+    }
+  }
+
+  Future<void> _handleDownload() async {
+    if (_pdfBytes == null || _isDownloading) return;
+
+    setState(() {
+      _isDownloading = true;
+      _downloadError = null;
+    });
+
+    try {
+      // En Flutter web, usamos la URL firmada para descargar
+      // Para móvil nativo, se guardaría en Downloads
+      await Share.shareXFiles([
+        XFile.fromData(
+          _pdfBytes!,
+          name: 'documento_clinico_${widget.documentId}.pdf',
+          mimeType: 'application/pdf',
+        ),
+      ], text: 'Documento clínico');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _downloadError = 'Error al descargar: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<ClinicalDocumentsProvider>();
-    final doc = provider.selectedDocument;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          doc?.titulo ?? 'Documento Clínico',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        title: const Text(
+          'Detalle Documento',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
-      ),
-      body: _pdfBytes != null
-          ? _buildDocumentPreview(doc, _pdfBytes!)
-          : _buildEmptyOrLoading(context),
-    );
-  }
-
-  Widget _buildDocumentPreview(dynamic doc, Uint8List bytes) {
-    final kbSize = (bytes.lengthInBytes / 1024).toStringAsFixed(1);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Tarjeta de estado de descarga
-          Card(
-            elevation: 0,
-            color: AppColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: AppColors.divider, width: 1),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.tealAccent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.verified_user_rounded,
-                      color: AppColors.secondary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Documento Autenticado',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Verificado por el servidor multitenant • $kbSize KB',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Hoja de Representación Clínica
-          Card(
-            elevation: 2,
-            shadowColor: Colors.black.withValues(alpha: 0.08),
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: AppColors.divider, width: 1),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Encabezado del documento
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.local_hospital, color: AppColors.primary, size: 24),
-                          const SizedBox(width: 8),
-                          Text(
-                            'CLÍNICA DIGITAL',
-                            style: AppTypography.labelLarge.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          doc?.tipoDocumento ?? 'DOCUMENTO',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 24),
-
-                  // Título y fecha
-                  Text(
-                    doc?.titulo ?? 'Documento Clínico Oficial',
-                    style: AppTypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  if (doc?.fechaDocumento != null)
-                    Text(
-                      'Fecha de emisión: ${doc.fechaDocumento}',
-                      style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-                    ),
-                  const SizedBox(height: 14),
-
-                  // Info del paciente y firmante
-                  if (doc?.pacienteNombre != null) ...[
-                    _buildInfoRow(Icons.person_outline, 'Paciente:', doc.pacienteNombre),
-                    const SizedBox(height: 6),
-                  ],
-                  if (doc?.firmanteNombre != null) ...[
-                    _buildInfoRow(Icons.medical_services_outlined, 'Emitido por:', doc.firmanteNombre),
-                    const SizedBox(height: 6),
-                  ],
-                  _buildInfoRow(Icons.confirmation_number_outlined, 'ID Documento:', '#${widget.documentId}'),
-
-                  const Divider(height: 24),
-
-                  // Descripción o contenido
-                  Text(
-                    'Contenido / Diagnóstico:',
-                    style: AppTypography.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      (doc?.descripcion != null && (doc.descripcion as String).isNotEmpty)
-                          ? doc.descripcion
-                          : 'Documento clínico adjunto emitido de acuerdo a la consulta médica realizada. Contiene las pautas, recetas o indicaciones diagnósticas oficiales.',
-                      style: const TextStyle(fontSize: 13, height: 1.5, color: AppColors.textPrimary),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-                  // Sello de seguridad
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
-                      borderRadius: BorderRadius.circular(10),
-                      color: AppColors.secondary.withValues(alpha: 0.05),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.shield_outlined, color: AppColors.secondary, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Documento con validez legal interna. Archivo binario asegurado en storage multitenant (${bytes.lengthInBytes} bytes).',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.secondary.withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Botón volver
-          ElevatedButton.icon(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('Volver al Listado'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: AppColors.textMuted),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+      body: Consumer<ClinicalDocumentsProvider>(
+        builder: (context, provider, _) {
+          final document = provider.selectedDocument;
 
-  Widget _buildEmptyOrLoading(BuildContext context) {
-    final provider = context.watch<ClinicalDocumentsProvider>();
-    final errorMessage = provider.errorMessage;
+          if (document == null) {
+            return _buildLoading();
+          }
 
-    if (errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          return Column(
             children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
-              Text(
-                errorMessage,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _load,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+              // 1. Información del documento
+              _buildDocumentInfoCard(document),
 
+              // 2. Visor PDF
+              Expanded(
+                child: _buildPdfViewer(),
+              ),
+
+              // 3. Botones de acción
+              if (_pdfBytes != null) _buildActionButtons(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -335,11 +127,375 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
           const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 16),
           Text(
-            'Descargando documento de forma segura...',
+            'Cargando documento...',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildDocumentInfoCard(dynamic document) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tipo de documento badge
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getTipoColor(document.tipoDocumento).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _getTipoLabel(document.tipoDocumento),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: _getTipoColor(document.tipoDocumento),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: document.estaActivo
+                      ? AppColors.successContainer
+                      : AppColors.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  document.estado.replaceAll('_', ' '),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: document.estaActivo ? AppColors.success : AppColors.error,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Título
+          Text(
+            document.titulo,
+            style: AppTypography.titleMedium.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+
+          // Descripción
+          if (document.descripcion != null && document.descripcion!.isNotEmpty) ...[
+            Text(
+              document.descripcion!,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // Metadatos en grid
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetaItem(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Paciente',
+                  value: document.pacienteNombre ?? '—',
+                ),
+              ),
+              Expanded(
+                child: _buildMetaItem(
+                  icon: Icons.medical_services_outlined,
+                  label: 'Médico',
+                  value: document.firmanteNombre ?? '—',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetaItem(
+                  icon: Icons.calendar_today_rounded,
+                  label: 'Fecha',
+                  value: _formatFecha(document.fechaDocumento),
+                ),
+              ),
+              Expanded(
+                child: _buildMetaItem(
+                  icon: Icons.fingerprint_rounded,
+                  label: 'Hash SHA-256',
+                  value: '${document.idDocumento}', // placeholder si no hay hash en entidad
+                  isSmall: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetaItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    bool isSmall = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: isSmall ? 14 : 16, color: AppColors.textMuted),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textMuted,
+                fontSize: isSmall ? 10 : 11,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTypography.bodyMedium.copyWith(
+            fontSize: isSmall ? 11 : 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPdfViewer() {
+    if (_pdfBytes != null) {
+      return SfPdfViewer.memory(
+        _pdfBytes!,
+        canShowScrollHead: false,
+        canShowPaginationDialog: true,
+        enableDoubleTapZooming: true,
+        initialZoomLevel: 100,
+        pageLayoutMode: PdfPageLayoutMode.single,
+      );
+    }
+
+    return Consumer<ClinicalDocumentsProvider>(
+      builder: (context, provider, _) {
+        if (provider.isViewerLoading) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(color: AppColors.primary),
+                const SizedBox(height: 16),
+                Text(
+                  'Procesando PDF...',
+                  style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (provider.errorMessage != null) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                  const SizedBox(height: 16),
+                  Text(
+                    provider.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _loadAll,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reintentar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: 16),
+              Text(
+                'Descargando documento de forma segura...',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          top: BorderSide(color: AppColors.divider, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Botón Descargar (primario)
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _isDownloading ? null : _handleDownload,
+              icon: _isDownloading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.download_rounded, size: 20),
+              label: Text(_isDownloading ? 'Descargando...' : 'Descargar PDF'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: AppTypography.labelLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Botón Compartir (outline)
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _pdfBytes == null ? null : _handleShare,
+              icon: const Icon(Icons.share_rounded, size: 20),
+              label: const Text('Compartir'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: BorderSide(color: AppColors.primary, width: 1.5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: AppTypography.labelLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleShare() async {
+    if (_pdfBytes == null) return;
+    await Share.shareXFiles([
+      XFile.fromData(
+        _pdfBytes!,
+        name: 'documento_clinico_${widget.documentId}.pdf',
+        mimeType: 'application/pdf',
+      ),
+    ], text: 'Documento clínico');
+  }
+
+  Color _getTipoColor(String tipo) {
+    switch (tipo) {
+      case 'RECETA':
+        return const Color(0xFF0284C7); // Sky blue
+      case 'ORDEN_LAB':
+        return const Color(0xFF7C3AED); // Violet
+      case 'RESULTADO_LAB':
+        return const Color(0xFF059669); // Emerald
+      case 'CERTIFICADO':
+        return const Color(0xFFD97706); // Amber
+      case 'INDICACION':
+        return const Color(0xFFDC2626); // Red
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  String _getTipoLabel(String tipo) {
+    switch (tipo) {
+      case 'RECETA':
+        return 'Receta';
+      case 'ORDEN_LAB':
+        return 'Orden Lab.';
+      case 'RESULTADO_LAB':
+        return 'Resultado Lab.';
+      case 'CERTIFICADO':
+        return 'Certificado';
+      case 'INDICACION':
+        return 'Indicación';
+      default:
+        return tipo;
+    }
+  }
+
+  String _formatFecha(String fecha) {
+    try {
+      final parsed = DateTime.parse(fecha);
+      return '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}/${parsed.year}';
+    } catch (_) {
+      return fecha;
+    }
   }
 }

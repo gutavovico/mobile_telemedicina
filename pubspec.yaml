@@ -34,16 +34,22 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   cupertino_icons: ^1.0.8
   http: ^1.2.1
+  http_parser: ^4.1.2
   provider: ^6.1.2
   google_fonts: ^6.2.1
   flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.2.2
   path_provider: ^2.1.5
   share_plus: ^11.1.0
+  file_saver: ^0.4.0
+  record: ^6.2.1
+  image_picker: ^1.1.2
+  file_picker: ^8.1.7
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  patrol: ^3.7.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

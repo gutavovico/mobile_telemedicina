@@ -48,6 +48,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (success && mounted) {
+      // CU23: el control de inactividad arranca con la sesion ya valida.
+      authController.startInactivityControl();
       Navigator.of(context).pushReplacementNamed('/home');
     }
   }

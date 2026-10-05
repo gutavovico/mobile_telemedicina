@@ -252,6 +252,14 @@ class HomeScreen extends StatelessWidget {
               mainAxisSpacing: 14,
               childAspectRatio: 1.15,
               children: [
+                if (authController.canAccessReports)
+                  _buildServiceCard(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Reportes',
+                    subtitle: 'Clínicos y administrativos CU22',
+                    color: AppColors.primary,
+                    onTap: () => Navigator.of(context).pushNamed('/analytics'),
+                  ),
                 _buildServiceCard(
                   icon: Icons.assignment_outlined,
                   title: 'Fichas Médicas',
@@ -278,9 +286,16 @@ class HomeScreen extends StatelessWidget {
                 _buildServiceCard(
                   icon: Icons.calendar_month_rounded,
                   title: 'Mis Citas',
-                  subtitle: 'Consultas agendadas CU25',
+                  subtitle: 'Consultas agendadas CU15',
                   color: const Color(0xFFE11D48),
-                  onTap: () => Navigator.of(context).pushNamed('/appointments'),
+                  onTap: () => Navigator.of(context).pushNamed('/mis-citas'),
+                ),
+                _buildServiceCard(
+                  icon: Icons.hourglass_top_rounded,
+                  title: 'Mi Turno',
+                  subtitle: 'Fila virtual del día CU08',
+                  color: const Color(0xFF0D9488),
+                  onTap: () => Navigator.of(context).pushNamed('/mi-cola'),
                 ),
                 if (isPatient)
                   _buildServiceCard(
