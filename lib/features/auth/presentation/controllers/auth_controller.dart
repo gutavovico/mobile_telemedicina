@@ -37,6 +37,7 @@ class AuthController extends ChangeNotifier {
   String? get successMessage => _successMessage;
   bool get isAuthenticated => _currentUser != null;
   bool get isPatient => _currentUser?.isPatient ?? false;
+  String? get userRole => _currentUser?.rolNombre?.toLowerCase();
 
   Future<void> _saveTenantFromProfile(UserModel user) async {
     final tenantId = user.tenantId;
@@ -104,7 +105,6 @@ class AuthController extends ChangeNotifier {
     } catch (_) {
       // Keep the established session; reports remain unavailable until retried.
     }
-  }
   }
 
   void clearMessages() {
@@ -415,7 +415,8 @@ class AuthController extends ChangeNotifier {
     _isCheckingAuth = false;
     notifyListeners();
     try {
-      await _remoteDataSource.logout();
+      final refreshToken = await _storageService.getRefreshToken();
+      await _remoteDataSource.logout(refreshToken);
     } catch (_) {
       // Best-effort remote token invalidation
     } finally {

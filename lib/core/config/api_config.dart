@@ -25,9 +25,12 @@ class ApiConfig {
 
   // Auth endpoints
   static String get loginUrl => '$baseUrl/auth/login';
+  static String get logoutUrl => '$baseUrl/auth/logout';
   static String get registerUrl => '$baseUrl/auth/register';
   static String get meUrl => '$baseUrl/auth/me';
   static String get refreshUrl => '$baseUrl/auth/refresh';
+  static String get sessionUrl => '$baseUrl/auth/session';
+  static String get sessionContinueUrl => '$baseUrl/auth/session/continue';
   static String get forgotPasswordUrl => '$baseUrl/auth/forgot-password';
   static String get resetPasswordUrl => '$baseUrl/auth/reset-password';
 
@@ -47,7 +50,9 @@ class ApiConfig {
   static String get fichasUrl => '$baseUrl/medical-records/fichas';
 
   // Documentos Clínicos (Medical Records - CU12)
+  static String get documentsUrl => '$baseUrl/api/v1/documentos';
   static String get myDocumentsUrl => '$baseUrl/api/v1/documentos/me';
+  static String patientDocumentsUrl(int id) => '$baseUrl/api/v1/pacientes/$id/documentos';
   static String documentDetailUrl(int id) => '$baseUrl/api/v1/documentos/$id';
   static String documentDownloadUrl(int id) =>
       '$baseUrl/api/v1/documentos/$id/download';
@@ -78,6 +83,11 @@ class ApiConfig {
 
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
+  static const Duration downloadTimeoutDuration = Duration(seconds: 60);
   static const Duration reportExportTimeoutDuration = Duration(seconds: 60);
   static const Duration reportTranscriptionTimeoutDuration = Duration(seconds: 60);
+
+  // Inactivity timeout configuration (CU23)
+  static const int inactivityTimeoutMinutes = 15;
+  static const int inactivityWarningSeconds = 60;
 }
