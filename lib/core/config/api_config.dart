@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
-
 class ApiConfig {
+  static const String _defaultBaseUrl =
+      'https://backend-telemedicina.onrender.com';
   static const String _configuredBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
   );
@@ -11,16 +11,7 @@ class ApiConfig {
           ? _configuredBaseUrl.substring(0, _configuredBaseUrl.length - 1)
           : _configuredBaseUrl;
     }
-    if (kIsWeb) {
-      // Backend local para desarrollo Web (Edge / Chrome)
-      return 'http://127.0.0.1:8000';
-    }
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      // 10.0.2.2 apunta al loopback del host en el Emulador Android
-      return 'http://10.0.2.2:8000';
-    }
-    // iOS simulator / Desktop / dispositivo físico (configurable con --dart-define=API_BASE_URL=...)
-    return 'http://127.0.0.1:8000';
+    return _defaultBaseUrl;
   }
 
   // Auth endpoints
