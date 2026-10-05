@@ -79,10 +79,13 @@ class AuthRemoteDataSource {
   /// Se envia el `refresh_token` en el body y no como Bearer: tras un logout, el
   /// access token puede estar invalidado y aun asi hay que poder cerrar la
   /// sesion de forma idempotente.
-  Future<void> logout(String refreshToken) async {
+  Future<void> logout([String? refreshToken]) async {
     await _apiClient.post(
       ApiConfig.logoutUrl,
-      body: <String, dynamic>{'refresh_token': refreshToken},
+      body: <String, dynamic>{
+        if (refreshToken != null && refreshToken.isNotEmpty)
+          'refresh_token': refreshToken,
+      },
     );
   }
 

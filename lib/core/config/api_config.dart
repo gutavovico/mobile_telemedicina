@@ -1,26 +1,27 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
-
 class ApiConfig {
+  static const String _defaultBaseUrl =
+      'https://backend-telemedicina.onrender.com';
+  static const String _configuredBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+  );
+
   static String get baseUrl {
-    const override = String.fromEnvironment('API_BASE_URL');
-    if (override.isNotEmpty) return override;
-    if (kIsWeb) {
-      // Backend local para desarrollo Web (Edge / Chrome)
-      return 'http://127.0.0.1:8000';
+    if (_configuredBaseUrl.isNotEmpty) {
+      return _configuredBaseUrl.endsWith('/')
+          ? _configuredBaseUrl.substring(0, _configuredBaseUrl.length - 1)
+          : _configuredBaseUrl;
     }
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      // 10.0.2.2 points to host machine loopback in Android Emulator
-      return 'https://backend-telemedicina.onrender.com';
-    }
-    // 127.0.0.1 iOS simulator / Desktop / Physical device (can be changed to LAN IP)
-    return 'https://backend-telemedicina.onrender.com';
+    return _defaultBaseUrl;
   }
 
   // Auth endpoints
   static String get loginUrl => '$baseUrl/auth/login';
+  static String get logoutUrl => '$baseUrl/auth/logout';
   static String get registerUrl => '$baseUrl/auth/register';
   static String get meUrl => '$baseUrl/auth/me';
   static String get refreshUrl => '$baseUrl/auth/refresh';
+  static String get sessionUrl => '$baseUrl/auth/session';
+  static String get sessionContinueUrl => '$baseUrl/auth/session/continue';
   static String get forgotPasswordUrl => '$baseUrl/auth/forgot-password';
   static String get resetPasswordUrl => '$baseUrl/auth/reset-password';
 
@@ -40,9 +41,17 @@ class ApiConfig {
   static String get fichasUrl => '$baseUrl/medical-records/fichas';
 
   // Documentos Clínicos (Medical Records - CU12)
+  static String get documentsUrl => '$baseUrl/api/v1/documentos';
   static String get myDocumentsUrl => '$baseUrl/api/v1/documentos/me';
+  static String patientDocumentsUrl(int id) => '$baseUrl/api/v1/pacientes/$id/documentos';
   static String documentDetailUrl(int id) => '$baseUrl/api/v1/documentos/$id';
-  static String documentDownloadUrl(int id) => '$baseUrl/api/v1/documentos/$id/download';
+  static String documentDownloadUrl(int id) =>
+      '$baseUrl/api/v1/documentos/$id/download';
+
+  // Recetas Médicas Digitales (Medical Records - CU16, solo lectura paciente)
+  static String get prescriptionsUrl => '$baseUrl/api/v1/recetas';
+  static String prescriptionDetailUrl(int id) => '$baseUrl/api/v1/recetas/$id';
+  static String prescriptionPdfUrl(int id) => '$baseUrl/api/v1/recetas/$id/pdf';
 
   // Teleconsulta y Chat de Cita Médica (CU15)
   static String teleconsultaUrl(int idCita) => '$baseUrl/api/v1/citas/$idCita/teleconsulta';
@@ -65,6 +74,11 @@ class ApiConfig {
 
   // Request timeout duration
   static const Duration timeoutDuration = Duration(seconds: 15);
+  static const Duration downloadTimeoutDuration = Duration(seconds: 60);
   static const Duration reportExportTimeoutDuration = Duration(seconds: 60);
   static const Duration reportTranscriptionTimeoutDuration = Duration(seconds: 60);
+
+  // Inactivity timeout configuration (CU23)
+  static const int inactivityTimeoutMinutes = 15;
+  static const int inactivityWarningSeconds = 60;
 }

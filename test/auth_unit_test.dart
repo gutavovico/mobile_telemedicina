@@ -28,7 +28,10 @@ void main() {
 
     test('validateConfirmPassword checks password equality', () {
       expect(Validators.validateConfirmPassword('123456', 'abcdef'), isNotNull);
-      expect(Validators.validateConfirmPassword('Clave123', 'Clave123'), isNull);
+      expect(
+        Validators.validateConfirmPassword('Clave123', 'Clave123'),
+        isNull,
+      );
     });
 
     test('calculatePasswordStrength evaluates scores properly', () {
@@ -48,7 +51,10 @@ void main() {
 
   group('Auth Models Serialization Test Suite', () {
     test('LoginRequest converts to JSON', () {
-      final req = LoginRequest(correo: ' test@mail.com ', password: 'password123');
+      final req = LoginRequest(
+        correo: ' test@mail.com ',
+        password: 'password123',
+      );
       final json = req.toJson();
       expect(json['correo'], 'test@mail.com');
       expect(json['password'], 'password123');
@@ -90,6 +96,7 @@ void main() {
         'telefono': '70000000',
         'id_rol': 2,
         'rol_nombre': 'paciente',
+        'tenant_id': 'clinica-7',
         'estado': true,
       };
       final user = UserModel.fromJson(json);
@@ -98,6 +105,38 @@ void main() {
       expect(user.nombreCompleto, 'Carlos Santander');
       expect(user.correo, 'carlos@hospital.com');
       expect(user.rolNombre, 'paciente');
+      expect(user.isPatient, isTrue);
+      expect(user.tenantId, 'clinica-7');
+      expect(user.toJson()['tenant_id'], 'clinica-7');
+    });
+
+    test('UserModel accepts the string role returned by /auth/me', () {
+      final user = UserModel.fromJson({
+        'id_usuario': 1,
+        'nombres': 'Admin',
+        'apellidos': 'Sistema',
+        'correo': 'admin@telemedicina.com',
+        'id_rol': 1,
+        'rol': 'ADMIN',
+        'estado': 'activo',
+      });
+
+      expect(user.rolNombre, 'ADMIN');
+      expect(user.isPatient, isFalse);
+    });
+
+    test('UserModel accepts id_clinica as tenant returned by /auth/me', () {
+      final user = UserModel.fromJson({
+        'id_usuario': 4,
+        'nombres': 'Paciente',
+        'apellidos': 'Prueba',
+        'correo': 'paciente@hospital.com',
+        'rol': 'PACIENTE',
+        'id_clinica': 9,
+      });
+
+      expect(user.isPatient, isTrue);
+      expect(user.tenantId, '9');
     });
   });
 }

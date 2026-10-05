@@ -7,16 +7,24 @@ import '../../../../core/storage/secure_storage_service.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/models/auth_models.dart';
 import '../../domain/entities/user_entity.dart';
+import '../../domain/services/inactivity_service.dart';
 
 class AuthController extends ChangeNotifier {
   final AuthRemoteDataSource _remoteDataSource;
   final SecureStorageService _storageService;
+  final InactivityService _inactivityService;
 
   AuthController({
     AuthRemoteDataSource? remoteDataSource,
     SecureStorageService? storageService,
-  })  : _remoteDataSource = remoteDataSource ?? AuthRemoteDataSource(),
-        _storageService = storageService ?? SecureStorageService();
+    InactivityService? inactivityService,
+  }) : _remoteDataSource = remoteDataSource ?? AuthRemoteDataSource(),
+       _storageService = storageService ?? SecureStorageService(),
+       _inactivityService = inactivityService ??
+           InactivityService(
+             remoteDataSource: remoteDataSource,
+             storageService: storageService,
+           );
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -36,6 +44,18 @@ class AuthController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   bool get isAuthenticated => _currentUser != null;
+  bool get isPatient => _currentUser?.isPatient ?? false;
+  String? get userRole => _currentUser?.rolNombre?.toLowerCase();
+
+  Future<void> _saveTenantFromProfile(UserModel user) async {
+    final tenantId = user.tenantId;
+    if (tenantId != null && tenantId.isNotEmpty) {
+      await _storageService.saveTenantId(tenantId);
+    } else {
+      await _storageService.clearTenantId();
+    }
+  }
+
   bool get canAccessReports {
     return _profileVerified && _reportsAuthorized && eligibleForReports(_currentUser);
   }
@@ -136,6 +156,9 @@ class AuthController extends ChangeNotifier {
         notifyListeners();
         return false;
       }
+      if (token != null && token.isNotEmpty) {
+        ApiClient().setSessionAccessToken(token);
+      }
 
       // Try reading locally cached user first for faster load
       final cachedUser = hasSessionToken ? null : await _storageService.getUser();
@@ -151,6 +174,7 @@ class AuthController extends ChangeNotifier {
         if (epoch != _sessionEpoch) return false;
         _currentUser = user;
         _profileVerified = true;
+        await _saveTenantFromProfile(user);
         if (!hasSessionToken && await _storageService.getRememberMe()) {
           if (epoch != _sessionEpoch) return false;
           await _storageService.saveUser(user.toJson());
@@ -177,6 +201,7 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
       return _currentUser != null;
     } catch (_) {
+      ApiClient().clearSessionAccessToken();
       if (epoch != _sessionEpoch) return false;
       _currentUser = null;
       _profileVerified = false;
@@ -207,6 +232,11 @@ class AuthController extends ChangeNotifier {
       if (epoch != _sessionEpoch) return false;
       final request = LoginRequest(correo: correo, password: password);
       final tokenResponse = await _remoteDataSource.login(request);
+      if (tokenResponse.accessToken.isEmpty) {
+        throw const FormatException(
+          'El backend no devolvió un token de acceso',
+        );
+      }
       if (epoch != _sessionEpoch) return false;
       ApiClient().setSessionAccessToken(tokenResponse.accessToken);
 
@@ -229,6 +259,7 @@ class AuthController extends ChangeNotifier {
       if (epoch != _sessionEpoch) return false;
       _currentUser = user;
       _profileVerified = true;
+      await _saveTenantFromProfile(user);
 
       // Si el login no trajo tenant_id, derivarlo de id_clinica o tenant_id de /auth/me
       final currentTenant = await _storageService.getTenantId();
@@ -291,7 +322,8 @@ class AuthController extends ChangeNotifier {
       await _remoteDataSource.register(request);
 
       _isLoading = false;
-      _successMessage = '¡Cuenta creada con éxito! Por favor inicia sesión para continuar.';
+      _successMessage =
+          '¡Cuenta creada con éxito! Por favor inicia sesión para continuar.';
       notifyListeners();
       return true;
     } on ApiException catch (e) {
@@ -308,14 +340,14 @@ class AuthController extends ChangeNotifier {
   }
 
   // Forgot Password
-  Future<bool> forgotPassword(String correo) async {
+  Future<bool> forgotPassword(String correo, {String canal = 'email'}) async {
     _isLoading = true;
     _errorMessage = null;
     _successMessage = null;
     notifyListeners();
 
     try {
-      final request = ForgotPasswordRequest(correo: correo);
+      final request = ForgotPasswordRequest(correo: correo, canal: canal);
       final response = await _remoteDataSource.forgotPassword(request);
 
       _isLoading = false;
@@ -341,7 +373,11 @@ class AuthController extends ChangeNotifier {
   }
 
   // Reset Password
-  Future<bool> resetPassword(String correo, String codigo, String nuevaPassword) async {
+  Future<bool> resetPassword(
+    String correo,
+    String codigo,
+    String nuevaPassword,
+  ) async {
     _isLoading = true;
     _errorMessage = null;
     _successMessage = null;
@@ -356,7 +392,8 @@ class AuthController extends ChangeNotifier {
       await _remoteDataSource.resetPassword(request);
 
       _isLoading = false;
-      _successMessage = 'Contraseña restablecida exitosamente. Por favor inicia sesión.';
+      _successMessage =
+          'Contraseña restablecida exitosamente. Por favor inicia sesión.';
       notifyListeners();
       return true;
     } on ApiException catch (e) {
@@ -365,7 +402,8 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Ocurrió un error inesperado al restablecer la contraseña.';
+      _errorMessage =
+          'Ocurrió un error inesperado al restablecer la contraseña.';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -376,6 +414,7 @@ class AuthController extends ChangeNotifier {
   Future<void> logout() async {
     if (_isLoggingOut) return;
     _isLoggingOut = true;
+    _inactivityService.stop();
     ++_sessionEpoch;
     ++_reportsCheckEpoch;
     _currentUser = null;
@@ -385,7 +424,8 @@ class AuthController extends ChangeNotifier {
     _isCheckingAuth = false;
     notifyListeners();
     try {
-      await _remoteDataSource.logout();
+      final refreshToken = await _storageService.getRefreshToken();
+      await _remoteDataSource.logout(refreshToken);
     } catch (_) {
       // Best-effort remote token invalidation
     } finally {
@@ -401,5 +441,27 @@ class AuthController extends ChangeNotifier {
       _isLoggingOut = false;
       notifyListeners();
     }
+  }
+
+  /// Inicia el control de inactividad tras un login correcto (CU23).
+  void startInactivityControl() => _inactivityService.start();
+
+  /// Reconcilia el reloj de inactividad contra el servidor (CU23).
+  Future<void> syncInactivityWithServer() =>
+      _inactivityService.syncWithServer();
+
+  /// Renueva la sesion en el servidor desde el aviso de inactividad (CU23).
+  Future<void> continueSession() => _inactivityService.continueSession();
+
+  /// Cuenta regresiva del aviso, en segundos. `null` si no hay aviso activo.
+  Stream<int> get inactivityWarning => _inactivityService.warningSeconds;
+
+  /// Emite cuando la sesion se cierra por inactividad (CU23).
+  Stream<void> get sessionExpired => _inactivityService.expired;
+
+  @override
+  void dispose() {
+    _inactivityService.dispose();
+    super.dispose();
   }
 }

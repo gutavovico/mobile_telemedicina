@@ -4,10 +4,7 @@ class LoginRequest {
   final String correo;
   final String password;
 
-  LoginRequest({
-    required this.correo,
-    required this.password,
-  });
+  LoginRequest({required this.correo, required this.password});
 
   Map<String, dynamic> toJson() => {
     'correo': correo.trim(),
@@ -77,9 +74,13 @@ class UserModel extends UserEntity {
     super.idRol,
     super.idClinica,
     super.rolNombre,
-    super.estado,
-    super.idClinica,
-  });
+    super.tenantId,
+    dynamic estado,
+  }) : super(
+          estado: estado is bool
+              ? (estado ? 'activo' : 'inactivo')
+              : estado?.toString(),
+        );
 
   String get nombreCompleto => '$nombres $apellidos'.trim();
 
@@ -95,6 +96,10 @@ class UserModel extends UserEntity {
       }
     }
 
+    final idClinica = json['id_clinica'] is int
+        ? json['id_clinica'] as int
+        : int.tryParse(json['id_clinica']?.toString() ?? '');
+
     return UserModel(
       idUsuario: json['id_usuario'] is int
           ? json['id_usuario']
@@ -106,16 +111,10 @@ class UserModel extends UserEntity {
       idRol: json['id_rol'] is int
           ? json['id_rol']
           : int.tryParse(json['id_rol']?.toString() ?? ''),
-      idClinica: json['id_clinica'] is int
-          ? json['id_clinica'] as int
-          : int.tryParse(json['id_clinica']?.toString() ?? ''),
+      idClinica: idClinica,
       rolNombre: rolParsed,
-      estado: json['estado'] is bool
-          ? (json['estado'] ? 'activo' : 'inactivo')
-          : json['estado']?.toString(),
-      idClinica: json['id_clinica'] is int
-          ? json['id_clinica']
-          : int.tryParse(json['id_clinica']?.toString() ?? ''),
+      tenantId: (json['tenant_id'] ?? json['id_clinica'])?.toString(),
+      estado: json['estado'],
     );
   }
 
@@ -128,8 +127,8 @@ class UserModel extends UserEntity {
     'id_rol': idRol,
     'id_clinica': idClinica,
     'rol_nombre': rolNombre,
+    'tenant_id': tenantId,
     'estado': estado,
-    'id_clinica': idClinica,
   };
 }
 
@@ -190,10 +189,7 @@ class ForgotPasswordResponse {
   final String detail;
   final String? debugCode;
 
-  ForgotPasswordResponse({
-    required this.detail,
-    this.debugCode,
-  });
+  ForgotPasswordResponse({required this.detail, this.debugCode});
 
   factory ForgotPasswordResponse.fromJson(Map<String, dynamic> json) {
     return ForgotPasswordResponse(
