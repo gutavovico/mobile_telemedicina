@@ -7,16 +7,24 @@ import '../../../../core/storage/secure_storage_service.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/models/auth_models.dart';
 import '../../domain/entities/user_entity.dart';
+import '../../domain/services/inactivity_service.dart';
 
 class AuthController extends ChangeNotifier {
   final AuthRemoteDataSource _remoteDataSource;
   final SecureStorageService _storageService;
+  final InactivityService _inactivityService;
 
   AuthController({
     AuthRemoteDataSource? remoteDataSource,
     SecureStorageService? storageService,
+    InactivityService? inactivityService,
   }) : _remoteDataSource = remoteDataSource ?? AuthRemoteDataSource(),
-       _storageService = storageService ?? SecureStorageService();
+       _storageService = storageService ?? SecureStorageService(),
+       _inactivityService = inactivityService ??
+           InactivityService(
+             remoteDataSource: remoteDataSource,
+             storageService: storageService,
+           );
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -332,14 +340,14 @@ class AuthController extends ChangeNotifier {
   }
 
   // Forgot Password
-  Future<bool> forgotPassword(String correo) async {
+  Future<bool> forgotPassword(String correo, {String canal = 'email'}) async {
     _isLoading = true;
     _errorMessage = null;
     _successMessage = null;
     notifyListeners();
 
     try {
-      final request = ForgotPasswordRequest(correo: correo);
+      final request = ForgotPasswordRequest(correo: correo, canal: canal);
       final response = await _remoteDataSource.forgotPassword(request);
 
       _isLoading = false;
@@ -406,6 +414,7 @@ class AuthController extends ChangeNotifier {
   Future<void> logout() async {
     if (_isLoggingOut) return;
     _isLoggingOut = true;
+    _inactivityService.stop();
     ++_sessionEpoch;
     ++_reportsCheckEpoch;
     _currentUser = null;
@@ -432,6 +441,27 @@ class AuthController extends ChangeNotifier {
       _isLoggingOut = false;
       notifyListeners();
     }
+  }
 
+  /// Inicia el control de inactividad tras un login correcto (CU23).
+  void startInactivityControl() => _inactivityService.start();
+
+  /// Reconcilia el reloj de inactividad contra el servidor (CU23).
+  Future<void> syncInactivityWithServer() =>
+      _inactivityService.syncWithServer();
+
+  /// Renueva la sesion en el servidor desde el aviso de inactividad (CU23).
+  Future<void> continueSession() => _inactivityService.continueSession();
+
+  /// Cuenta regresiva del aviso, en segundos. `null` si no hay aviso activo.
+  Stream<int> get inactivityWarning => _inactivityService.warningSeconds;
+
+  /// Emite cuando la sesion se cierra por inactividad (CU23).
+  Stream<void> get sessionExpired => _inactivityService.expired;
+
+  @override
+  void dispose() {
+    _inactivityService.dispose();
+    super.dispose();
   }
 }
