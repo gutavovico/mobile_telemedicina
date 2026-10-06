@@ -1,15 +1,20 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SecureStorageService {
-  static final SecureStorageService _instance = SecureStorageService._internal();
+  static final SecureStorageService _instance =
+      SecureStorageService._internal();
   factory SecureStorageService() => _instance;
   SecureStorageService._internal();
 
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
+    ),
+    webOptions: WebOptions(
+      dbName: 'telemedicina_db',
     ),
   );
 
@@ -21,34 +26,29 @@ class SecureStorageService {
 
   // Save Tenant ID
   Future<void> saveTenantId(String tenantId) async {
-    try {
-      await _secureStorage.write(key: _keyTenantId, value: tenantId);
-    } catch (_) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_keyTenantId, tenantId);
-    }
+    await _secureStorage.write(key: _keyTenantId, value: tenantId);
   }
 
   // Get Tenant ID
   Future<String?> getTenantId() async {
-    try {
-      final tenantId = await _secureStorage.read(key: _keyTenantId);
-      if (tenantId != null && tenantId.isNotEmpty) return tenantId;
-    } catch (_) {}
+    return _secureStorage.read(key: _keyTenantId);
+  }
 
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyTenantId);
+  Future<void> clearTenantId() async {
+    await _secureStorage.delete(key: _keyTenantId);
   }
 
   // Save JWT tokens
-  Future<void> saveTokens({required String accessToken, String? refreshToken}) async {
-    try {
-      await _secureStorage.write(key: _keyAccessToken, value: accessToken);
-      if (refreshToken != null) {
-        await _secureStorage.write(key: _keyRefreshToken, value: refreshToken);
-      }
-    } catch (_) {
-      // Fallback for environments where secure storage is unavailable
+  Future<void> saveTokens({
+    required String accessToken,
+    String? refreshToken,
+  }) async {
+    await _secureStorage.write(key: _keyAccessToken, value: accessToken);
+    if (refreshToken != null) {
+      await _secureStorage.write(key: _keyRefreshToken, value: refreshToken);
+    }
+    // Also save to SharedPreferences for web (more reliable)
+    if (kIsWeb) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyAccessToken, accessToken);
       if (refreshToken != null) {
@@ -59,9 +59,16 @@ class SecureStorageService {
 
   // Get Access Token
   Future<String?> getAccessToken() async {
+    // On web, prioritize SharedPreferences (more reliable than flutter_secure_storage web)
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_keyAccessToken);
+      if (token != null && token.isNotEmpty) return token;
+    }
+
     try {
       final token = await _secureStorage.read(key: _keyAccessToken);
-      if (token != null) return token;
+      if (token != null && token.isNotEmpty) return token;
     } catch (_) {}
 
     final prefs = await SharedPreferences.getInstance();
@@ -70,9 +77,15 @@ class SecureStorageService {
 
   // Get Refresh Token
   Future<String?> getRefreshToken() async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_keyRefreshToken);
+      if (token != null && token.isNotEmpty) return token;
+    }
+
     try {
       final token = await _secureStorage.read(key: _keyRefreshToken);
-      if (token != null) return token;
+      if (token != null && token.isNotEmpty) return token;
     } catch (_) {}
 
     final prefs = await SharedPreferences.getInstance();
@@ -88,10 +101,22 @@ class SecureStorageService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyUser, userJson);
     }
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyUser, userJson);
+    }
   }
 
   // Get Saved User Profile
   Future<Map<String, dynamic>?> getUser() async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString(_keyUser);
+      if (userJson != null) {
+        return jsonDecode(userJson) as Map<String, dynamic>;
+      }
+    }
+
     try {
       final userJson = await _secureStorage.read(key: _keyUser);
       if (userJson != null) {
@@ -120,12 +145,10 @@ class SecureStorageService {
 
   // Clear Session Data
   Future<void> clearSession() async {
-    try {
-      await _secureStorage.delete(key: _keyAccessToken);
-      await _secureStorage.delete(key: _keyRefreshToken);
-      await _secureStorage.delete(key: _keyTenantId);
-      await _secureStorage.delete(key: _keyUser);
-    } catch (_) {}
+    await _secureStorage.delete(key: _keyAccessToken);
+    await _secureStorage.delete(key: _keyRefreshToken);
+    await _secureStorage.delete(key: _keyTenantId);
+    await _secureStorage.delete(key: _keyUser);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccessToken);

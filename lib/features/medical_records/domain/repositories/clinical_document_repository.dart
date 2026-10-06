@@ -11,6 +11,28 @@ abstract class ClinicalDocumentRepository {
     String? q,
   });
 
+  /// Documentos del tenant (ADMIN/MEDICO/RECEPCION)
+  Future<DocumentoPaginado> getTenantDocuments({
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    int? idPaciente,
+    String? fechaDesde,
+    String? fechaHasta,
+  });
+
+  /// Documentos de un paciente específico (ADMIN/MEDICO/RECEPCION)
+  Future<DocumentoPaginado> getPatientDocuments({
+    required int patientId,
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    String? fechaDesde,
+    String? fechaHasta,
+  });
+
   Future<ClinicalDocument> getDocumentById(int idDocumento);
 
   Future<DocumentoDescargable> requestDownloadUrl(int idDocumento);

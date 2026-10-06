@@ -24,7 +24,7 @@ class TimeoutException extends ApiException {
 }
 
 class UnauthorizedException extends ApiException {
-  UnauthorizedException([String message = 'Sesión expirada o credenciales inválidas.'])
+  UnauthorizedException([String message = 'No autenticado: token inválido o ausente'])
       : super(message: message, statusCode: 401);
 }
 

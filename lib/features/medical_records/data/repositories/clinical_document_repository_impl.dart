@@ -28,6 +28,50 @@ class ClinicalDocumentRepositoryImpl implements ClinicalDocumentRepository {
   }
 
   @override
+  Future<DocumentoPaginado> getTenantDocuments({
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    int? idPaciente,
+    String? fechaDesde,
+    String? fechaHasta,
+  }) async {
+    final result = await _service.getTenantDocuments(
+      page: page,
+      pageSize: pageSize,
+      tipoDocumento: tipoDocumento,
+      q: q,
+      idPaciente: idPaciente,
+      fechaDesde: fechaDesde,
+      fechaHasta: fechaHasta,
+    );
+    return _mapPaginado(result);
+  }
+
+  @override
+  Future<DocumentoPaginado> getPatientDocuments({
+    required int patientId,
+    int page = 1,
+    int pageSize = 20,
+    String? tipoDocumento,
+    String? q,
+    String? fechaDesde,
+    String? fechaHasta,
+  }) async {
+    final result = await _service.getPatientDocuments(
+      patientId: patientId,
+      page: page,
+      pageSize: pageSize,
+      tipoDocumento: tipoDocumento,
+      q: q,
+      fechaDesde: fechaDesde,
+      fechaHasta: fechaHasta,
+    );
+    return _mapPaginado(result);
+  }
+
+  @override
   Future<ClinicalDocument> getDocumentById(int idDocumento) async {
     final model = await _service.getDocumentById(idDocumento);
     return _mapEntity(model);
