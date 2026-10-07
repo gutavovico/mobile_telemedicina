@@ -47,6 +47,7 @@ class ApiConfig {
   static String documentDetailUrl(int id) => '$baseUrl/api/v1/documentos/$id';
   static String documentDownloadUrl(int id) =>
       '$baseUrl/api/v1/documentos/$id/download';
+  static String documentFileUrl(int id) => '$baseUrl/api/v1/documentos/$id/file';
 
   // Recetas Médicas Digitales (Medical Records - CU16, solo lectura paciente)
   static String get prescriptionsUrl => '$baseUrl/api/v1/recetas';

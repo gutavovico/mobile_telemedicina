@@ -82,7 +82,7 @@ class ApiClient implements ApiClientInterface {
       headers['Accept'] = '*/*';
       final response = await _client
           .get(Uri.parse(url), headers: headers)
-          .timeout(ApiConfig.timeoutDuration);
+          .timeout(ApiConfig.downloadTimeoutDuration);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return response.bodyBytes;
@@ -114,6 +114,7 @@ class ApiClient implements ApiClientInterface {
     }
   }
 
+  @override
   Future<dynamic> post(
     String url, {
     dynamic body,
