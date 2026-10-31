@@ -15,7 +15,6 @@ import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/reset_password_screen.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/widgets/patient_only_route.dart';
-import 'features/communications/presentation/screens/communications_screen.dart';
 import 'features/medical_records/presentation/providers/clinical_documents_provider.dart';
 import 'features/medical_records/presentation/providers/ficha_provider.dart';
 import 'features/medical_records/presentation/providers/patient_provider.dart';
@@ -34,6 +33,9 @@ import 'features/cola_virtual/presentation/providers/cola_provider.dart';
 import 'features/cola_virtual/presentation/screens/cola_operativa_screen.dart';
 import 'features/cola_virtual/presentation/screens/mi_turno_screen.dart';
 import 'features/teleconsulta/presentation/providers/teleconsulta_provider.dart';
+import 'features/teleconsulta/presentation/screens/teleconsultas_list_screen.dart';
+import 'features/teleconsulta/presentation/screens/sala_espera_screen.dart';
+import 'features/teleconsulta/presentation/screens/videollamada_movil_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -113,7 +115,10 @@ class TelemedicinaApp extends StatelessWidget {
               const PatientOnlyRoute(child: DocumentsListScreen()),
           '/recetas': (context) =>
               const PatientOnlyRoute(child: MisRecetasScreen()),
-          '/communications': (context) => const CommunicationsScreen(),
+          '/communications': (context) => const TeleconsultasListScreen(),
+          '/teleconsultas': (context) => const TeleconsultasListScreen(),
+          '/teleconsulta/sala-espera': (context) => const SalaEsperaScreen(),
+          '/teleconsulta/videollamada': (context) => const VideollamadaMovilScreen(),
           '/analytics': (context) => const ReportsScreen(),
           '/ai-assistant': (context) => const AiAssistantScreen(),
         },

@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -78,7 +83,6 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
     _textController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
-    // Detener polling al salir de la pantalla
     final provider = Provider.of<TeleconsultaProvider>(context, listen: false);
     provider.detenerPolling();
     super.dispose();
@@ -123,6 +127,59 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
     }
   }
 
+  Future<void> _seleccionarArchivoReal() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'doc', 'docx'],
+        withData: true,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final f = result.files.first;
+        final bytes = f.bytes;
+        final kb = ((f.size > 0 ? f.size : (bytes?.length ?? 1024)) / 1024).ceil();
+        final ext = (f.extension ?? 'pdf').toLowerCase();
+        String mime = 'application/pdf';
+        if (['png', 'jpg', 'jpeg', 'webp'].contains(ext)) {
+          mime = 'image/${ext == 'jpg' ? 'jpeg' : ext}';
+        }
+        final dataUrl = bytes != null ? 'data:$mime;base64,${base64Encode(bytes)}' : null;
+        if (!mounted) return;
+        final provider = Provider.of<TeleconsultaProvider>(context, listen: false);
+        await provider.enviarMensaje(
+          idCita: widget.idCita,
+          contenido: 'Adjunto documento: ${f.name}',
+          adjuntoNombre: f.name,
+          adjuntoTamano: '$kb KB',
+          adjuntoUrl: dataUrl,
+        );
+        _scrollToBottom();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _seleccionarImagenGaleria() async {
+    try {
+      final picker = ImagePicker();
+      final xfile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (xfile != null) {
+        final bytes = await xfile.readAsBytes();
+        final kb = (bytes.length / 1024).ceil();
+        final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+        if (!mounted) return;
+        final provider = Provider.of<TeleconsultaProvider>(context, listen: false);
+        await provider.enviarMensaje(
+          idCita: widget.idCita,
+          contenido: 'Adjunto imagen médica: ${xfile.name}',
+          adjuntoNombre: xfile.name,
+          adjuntoTamano: '$kb KB',
+          adjuntoUrl: dataUrl,
+        );
+        _scrollToBottom();
+      }
+    } catch (_) {}
+  }
+
   void _mostrarSelectorAdjuntos() {
     showModalBottomSheet(
       context: context,
@@ -144,31 +201,25 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: AppColors.primaryLight,
-                  child: Icon(Icons.picture_as_pdf_outlined, color: AppColors.primary),
+                  child: Icon(Icons.upload_file_rounded, color: AppColors.primary),
                 ),
-                title: const Text('Estudio / Laboratorio (PDF)'),
-                subtitle: const Text('Resultados_Analisis_Clinico.pdf (1.2 MB)'),
+                title: const Text('Seleccionar Documento o PDF del dispositivo'),
+                subtitle: const Text('PDF, JPG, PNG o Documento clínico'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _adjuntarArchivoSimulado(
-                    nombre: 'Resultados_Laboratorio_SJD.pdf',
-                    tamano: '1.2 MB',
-                  );
+                  _seleccionarArchivoReal();
                 },
               ),
               ListTile(
                 leading: const CircleAvatar(
                   backgroundColor: AppColors.successContainer,
-                  child: Icon(Icons.image_outlined, color: AppColors.success),
+                  child: Icon(Icons.photo_library_outlined, color: AppColors.success),
                 ),
-                title: const Text('Fotografía / Imagen Médica'),
-                subtitle: const Text('Foto_Sintoma_01.jpg (850 KB)'),
+                title: const Text('Seleccionar Fotografía de la Galería'),
+                subtitle: const Text('Enviar foto o imagen médica en tiempo real'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _adjuntarArchivoSimulado(
-                    nombre: 'Foto_Examen_Fisico.jpg',
-                    tamano: '850 KB',
-                  );
+                  _seleccionarImagenGaleria();
                 },
               ),
             ],
@@ -178,19 +229,127 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
     );
   }
 
-  Future<void> _adjuntarArchivoSimulado({
-    required String nombre,
-    required String tamano,
-  }) async {
-    final provider = Provider.of<TeleconsultaProvider>(context, listen: false);
-    await provider.enviarMensaje(
-      idCita: widget.idCita,
-      contenido: 'Adjunto documento para revisión en consulta: $nombre',
-      adjuntoNombre: nombre,
-      adjuntoTamano: tamano,
-      adjuntoUrl: 'https://backend-telemedicina.onrender.com/media/$nombre',
+  Uint8List? _extraerBytesDataUrl(String? url) {
+    if (url == null || !url.startsWith('data:')) return null;
+    final commaIdx = url.indexOf(',');
+    if (commaIdx < 0) return null;
+    try {
+      return base64Decode(url.substring(commaIdx + 1));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _verArchivoAdjunto(ChatMessageModel msg) {
+    final bytes = _extraerBytesDataUrl(msg.adjuntoUrl);
+    final esImagen = (msg.adjuntoUrl != null && msg.adjuntoUrl!.startsWith('data:image/')) ||
+        (msg.adjuntoNombre != null &&
+            RegExp(r'\.(png|jpg|jpeg|webp|gif)$', caseSensitive: false).hasMatch(msg.adjuntoNombre!));
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          msg.adjuntoNombre ?? 'Documento clínico',
+          style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: esImagen && bytes != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(bytes, fit: BoxFit.contain),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.description_outlined, color: AppColors.primary, size: 32),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                msg.adjuntoNombre ?? 'Documento.pdf',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Text(
+                                'Tamaño: ${msg.adjuntoTamano ?? "Adjunto"} • Enviado por ${msg.nombreRemitente}',
+                                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      msg.contenido,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cerrar'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _descargarArchivoAdjunto(msg);
+            },
+            icon: const Icon(Icons.download_rounded, size: 18),
+            label: const Text('Descargar'),
+          ),
+        ],
+      ),
     );
-    _scrollToBottom();
+  }
+
+  Future<void> _descargarArchivoAdjunto(ChatMessageModel msg) async {
+    try {
+      final bytes = _extraerBytesDataUrl(msg.adjuntoUrl) ??
+          Uint8List.fromList(
+            utf8.encode(
+              'DOCUMENTO DE TELECONSULTA\nArchivo: ${msg.adjuntoNombre}\nRemitente: ${msg.nombreRemitente}\nDetalle: ${msg.contenido}\n',
+            ),
+          );
+      final nombreCompleto = msg.adjuntoNombre ?? 'documento_teleconsulta.pdf';
+      final dotIdx = nombreCompleto.lastIndexOf('.');
+      final nombreSinExt = dotIdx > 0 ? nombreCompleto.substring(0, dotIdx) : nombreCompleto;
+      final ext = dotIdx > 0 ? nombreCompleto.substring(dotIdx + 1) : 'pdf';
+
+      await FileSaver.instance.saveFile(
+        name: nombreSinExt,
+        bytes: bytes,
+        fileExtension: ext,
+        mimeType: MimeType.other,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Archivo descargado: $nombreCompleto'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Archivo preparado: ${msg.adjuntoNombre ?? "documento"}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -202,13 +361,12 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
       vm?.medico?.nombreCompleto ?? widget.medicoNombre,
     );
     final especialidadReal = vm?.cita?.especialidad ?? widget.especialidadNombre ?? 'Medicina General';
-    final fechaReal = vm?.cita?.rangoFechas ?? widget.fechaCita ?? '03 Octubre 2026';
-    final horaReal = vm?.cita?.horaTeleconsulta ?? widget.horaCita ?? '17:00 h';
+    final fechaReal = vm?.cita?.rangoFechas ?? widget.fechaCita ?? 'Hoy';
+    final horaReal = vm?.cita?.horaTeleconsulta ?? widget.horaCita ?? '10:30 h';
     final clinicaReal = vm?.nombreClinica ?? widget.clinicaNombre ?? 'Hospital San Juan de Dios';
 
     final mensajes = teleconsultaProvider.mensajes;
 
-    // Escuchar cambios para scrollear suavemente
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     Widget content = Scaffold(
@@ -235,7 +393,6 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  // Avatar del médico
                   Stack(
                     children: [
                       CircleAvatar(
@@ -264,7 +421,6 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
                     ],
                   ),
                   const SizedBox(width: 12),
-                  // Datos del médico y tiempo de respuesta
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,10 +447,11 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
                             ),
                             const Text(' • ', style: TextStyle(color: AppColors.textMuted)),
                             Text(
-                              'Suele responder en 2 h',
+                              'Chat en tiempo real',
                               style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.textMuted,
+                                color: AppColors.success,
                                 fontSize: 11,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -311,7 +468,6 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Chip de contexto de cita
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -358,8 +514,6 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
                 ),
               ),
             ),
-
-            // Mensajes o indicador de carga
             Expanded(
               child: teleconsultaProvider.isLoading && mensajes.isEmpty
                   ? const Center(child: CircularProgressIndicator())
@@ -392,7 +546,7 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Envía un saludo o consulta al especialista sobre tus síntomas o tratamientos.',
+                                  'Envía un saludo o adjunta tus estudios y documentos clínicos.',
                                   textAlign: TextAlign.center,
                                   style: AppTypography.bodySmall.copyWith(
                                     color: AppColors.textSecondary,
@@ -412,8 +566,6 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
                           },
                         ),
             ),
-
-            // Input inferior para escribir y enviar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: const BoxDecoration(
@@ -496,6 +648,9 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
 
   Widget _buildMessageBubble(ChatMessageModel msg) {
     final esPropio = msg.esPropio;
+    final bytesImagen = (msg.adjuntoUrl != null && msg.adjuntoUrl!.startsWith('data:image/'))
+        ? _extraerBytesDataUrl(msg.adjuntoUrl)
+        : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -544,37 +699,108 @@ class _ChatTeleconsultaScreenState extends State<ChatTeleconsultaScreen> {
                   if (msg.adjuntoNombre != null && msg.adjuntoNombre!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: esPropio
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: esPropio
-                              ? Colors.white.withValues(alpha: 0.3)
-                              : AppColors.divider,
-                        ),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.divider),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.attach_file_rounded,
-                            size: 16,
-                            color: esPropio ? Colors.white : AppColors.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              '${msg.adjuntoNombre} (${msg.adjuntoTamano ?? "Archivo"})',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: esPropio ? Colors.white : AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
+                          if (bytesImagen != null) ...[
+                            GestureDetector(
+                              onTap: () => _verArchivoAdjunto(msg),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(
+                                  bytesImagen,
+                                  height: 130,
+                                  width: double.infinity,
+                                  fit: BoxFit.contain,
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 8),
+                          ],
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.attach_file_rounded,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  '${msg.adjuntoNombre} (${msg.adjuntoTamano ?? "Archivo"})',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              InkWell(
+                                onTap: () => _verArchivoAdjunto(msg),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.visibility_outlined, size: 14, color: AppColors.primary),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Ver',
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: () => _descargarArchivoAdjunto(msg),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.download_rounded, size: 14, color: AppColors.textPrimary),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Descargar',
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
