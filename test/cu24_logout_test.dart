@@ -20,6 +20,7 @@ class FakeApiClient implements ApiClientInterface {
     String url, {
     dynamic body,
     bool includeAuth = true,
+    Map<String, String>? headers,
   }) async {
     postUrls.add(url);
     postBodies.add(Map<String, dynamic>.from(body as Map));
@@ -27,7 +28,7 @@ class FakeApiClient implements ApiClientInterface {
   }
 
   @override
-  Future<dynamic> get(String url, {bool includeAuth = true, String? authToken}) async {
+  Future<dynamic> get(String url, {bool includeAuth = true, String? authToken, Map<String, String>? headers}) async {
     return <String, dynamic>{
       'activa': true,
       'segundos_restantes': 900,
@@ -37,7 +38,21 @@ class FakeApiClient implements ApiClientInterface {
   }
 
   @override
-  Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
+  Future<dynamic> patch(
+    String url, {
+    dynamic body,
+    bool includeAuth = true,
+    Map<String, String>? headers,
+  }) async => null;
+
+  @override
+  Future<dynamic> delete(
+    String url, {
+    bool includeAuth = true,
+    Map<String, String>? headers,
+  }) async => null;
+
+Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
     throw UnimplementedError();
   }
 }

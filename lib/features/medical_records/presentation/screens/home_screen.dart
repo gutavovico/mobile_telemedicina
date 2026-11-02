@@ -282,6 +282,13 @@ class HomeScreen extends StatelessWidget {
                     color: AppColors.secondary,
                     onTap: () => Navigator.of(context).pushNamed('/recetas'),
                   ),
+                  _buildServiceCard(
+                    icon: Icons.healing_rounded,
+                    title: 'Mis Tratamientos',
+                    subtitle: 'Planes médicos y tomas CU17',
+                    color: const Color(0xFF0284C7),
+                    onTap: () => Navigator.of(context).pushNamed('/tratamientos'),
+                  ),
                 ],
                 _buildServiceCard(
                   icon: Icons.calendar_month_rounded,

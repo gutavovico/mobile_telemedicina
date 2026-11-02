@@ -54,14 +54,18 @@ class ApiClient implements ApiClientInterface {
     String url, {
     bool includeAuth = true,
     String? authToken,
+    Map<String, String>? headers,
   }) async {
     try {
-      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final reqHeaders = await _buildHeaders(
+        includeAuth: includeAuth,
+        extraHeaders: headers,
+      );
       if (authToken != null && authToken.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $authToken';
+        reqHeaders['Authorization'] = 'Bearer $authToken';
       }
       final response = await _client
-          .get(Uri.parse(url), headers: headers)
+          .get(Uri.parse(url), headers: reqHeaders)
           .timeout(ApiConfig.timeoutDuration);
 
       return _handleResponse(response);
@@ -119,13 +123,17 @@ class ApiClient implements ApiClientInterface {
     String url, {
     dynamic body,
     bool includeAuth = true,
+    Map<String, String>? headers,
   }) async {
     try {
-      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final resolvedHeaders = await _buildHeaders(
+        includeAuth: includeAuth,
+        extraHeaders: headers,
+      );
       final response = await _client
           .post(
             Uri.parse(url),
-            headers: headers,
+            headers: resolvedHeaders,
             body: body != null ? jsonEncode(body) : null,
           )
           .timeout(ApiConfig.timeoutDuration);
@@ -188,17 +196,22 @@ class ApiClient implements ApiClientInterface {
     }
   }
 
+  @override
   Future<dynamic> patch(
     String url, {
     dynamic body,
     bool includeAuth = true,
+    Map<String, String>? headers,
   }) async {
     try {
-      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final resolvedHeaders = await _buildHeaders(
+        includeAuth: includeAuth,
+        extraHeaders: headers,
+      );
       final response = await _client
           .patch(
             Uri.parse(url),
-            headers: headers,
+            headers: resolvedHeaders,
             body: body != null ? jsonEncode(body) : null,
           )
           .timeout(ApiConfig.timeoutDuration);
@@ -240,11 +253,19 @@ class ApiClient implements ApiClientInterface {
     }
   }
 
-  Future<dynamic> delete(String url, {bool includeAuth = true}) async {
+  @override
+  Future<dynamic> delete(
+    String url, {
+    bool includeAuth = true,
+    Map<String, String>? headers,
+  }) async {
     try {
-      final headers = await _buildHeaders(includeAuth: includeAuth);
+      final resolvedHeaders = await _buildHeaders(
+        includeAuth: includeAuth,
+        extraHeaders: headers,
+      );
       final response = await _client
-          .delete(Uri.parse(url), headers: headers)
+          .delete(Uri.parse(url), headers: resolvedHeaders)
           .timeout(ApiConfig.timeoutDuration);
 
       return _handleResponse(response);
