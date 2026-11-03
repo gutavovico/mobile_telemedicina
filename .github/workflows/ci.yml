@@ -53,26 +53,8 @@ jobs:
           path: coverage/
           retention-days: 7
 
-  patrol:
-    name: E2E Tests (Patrol)
-    runs-on: ubuntu-latest
-    needs: [analyze, test]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter pub get
-      - name: Run Patrol tests
-        run: |
-          flutter pub get
-          # Patrol tests require Android emulator or iOS simulator
-          # For CI, we run in headless mode with Patrol's native automation
-          flutter drive --driver=test_driver/patrol_test.dart --target=integration_test/patrol_test.dart
-        env:
-          PATROL_HEADLESS: 'true'
-
+  # Patrol queda fuera del CI del PR hasta contar con pruebas válidas y un emulador Android.
+  # La suite de integración se conserva para ejecutarla manualmente al completar esa preparación.
   build-android:
     name: Build Android APK/AAB
     runs-on: ubuntu-latest
