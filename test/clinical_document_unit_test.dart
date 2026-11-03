@@ -12,7 +12,6 @@ import 'package:mobile_telemedicina/features/medical_records/domain/repositories
 import 'package:mobile_telemedicina/features/medical_records/domain/usecases/download_document_usecase.dart';
 import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_document_detail_usecase.dart';
 import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_my_documents_usecase.dart';
-import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_patient_documents_usecase.dart';
 import 'package:mobile_telemedicina/features/medical_records/domain/usecases/get_tenant_documents_usecase.dart';
 import 'package:mobile_telemedicina/features/medical_records/presentation/providers/clinical_documents_provider.dart';
 
@@ -59,7 +58,8 @@ class FakeApiClient implements ApiClientInterface {
     Map<String, String>? headers,
   }) async => null;
 
-Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
+  @override
+  Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
     getCalls.add('D:$url');
     downloadAuth.add(includeAuth);
     if (downloadFailure != null) {
@@ -480,7 +480,6 @@ void main() {
       return ClinicalDocumentsProvider(
         getMyDocumentsUseCase: GetMyDocumentsUseCase(repository: repo),
         getTenantDocumentsUseCase: GetTenantDocumentsUseCase(repository: repo),
-        getPatientDocumentsUseCase: GetPatientDocumentsUseCase(repository: repo),
         getDocumentDetailUseCase: GetDocumentDetailUseCase(repository: repo),
         downloadDocumentUseCase: DownloadDocumentUseCase(repository: repo),
       );

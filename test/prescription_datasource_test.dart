@@ -47,7 +47,8 @@ class FakeApiClient implements ApiClientInterface {
     Map<String, String>? headers,
   }) async => null;
 
-Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
+  @override
+  Future<Uint8List> downloadBytes(String url, {bool includeAuth = true}) async {
     lastDownloadUrl = url;
     return downloadResponse;
   }
