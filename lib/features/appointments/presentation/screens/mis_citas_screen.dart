@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../teleconsulta/presentation/screens/chat_teleconsulta_screen.dart';
 import '../../../payments/presentation/screens/payment_checkout_screen.dart';
+import '../../../teleconsulta/presentation/screens/sala_espera_screen.dart';
 import '../../data/models/appointment_model.dart';
 import '../providers/appointment_provider.dart';
 import 'book_appointment_sheet.dart';
@@ -68,6 +69,25 @@ class _MisCitasScreenState extends State<MisCitasScreen>
     } catch (_) {
       return 'OCT';
     }
+  }
+
+  void _abrirSalaDeEspera(AppointmentModel cita) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SalaEsperaScreen(
+          idCita: cita.idCita,
+          codigoFicha: 'FICHA CIT-${cita.idCita}',
+          medicoNombre: _limpiarTituloMedico(cita.medicoNombre),
+          especialidad: '${cita.especialidadNombre} · Teleconsulta',
+          clinicaNombre: 'Hospital San Juan de Dios',
+          clinicaIniciales: 'SJ',
+          horaTeleconsulta: cita.horaInicio.isNotEmpty ? cita.horaInicio : '10:30',
+          posicionEnFila: 2,
+          pacientesAntes: 1,
+          tiempoEstimadoMinutos: 8,
+        ),
+      ),
+    );
   }
 
   void _abrirChat(AppointmentModel cita) {
@@ -510,24 +530,61 @@ class _MisCitasScreenState extends State<MisCitasScreen>
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Botón Chatear destacado
-                Expanded(
-                  child: ElevatedButton.icon(
+                // Botón según modalidad: Si es telemedicina muestra Chatear y Entrar a la sala
+                if (cita.tipoConsulta == 'TELEMEDICINA') ...[
+                  OutlinedButton.icon(
                     onPressed: () => _abrirChat(cita),
-                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
                     label: const Text('Chatear'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      textStyle: AppTypography.button.copyWith(fontSize: 14),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _abrirSalaDeEspera(cita),
+                      icon: const Icon(Icons.videocam_rounded, size: 18, color: Colors.white),
+                      label: const Text('Entrar a la sala'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0B2948),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: AppTypography.button.copyWith(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  // Botón Chatear estándar para presencial
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _abrirChat(cita),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                      label: const Text('Chatear'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: AppTypography.button.copyWith(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 10),
 
                 // Botón Secundario Contextual (Reprogramar o Pagar ahora)

@@ -15,7 +15,6 @@ import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/reset_password_screen.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/widgets/patient_only_route.dart';
-import 'features/communications/presentation/screens/communications_screen.dart';
 import 'features/medical_records/presentation/providers/clinical_documents_provider.dart';
 import 'features/medical_records/presentation/providers/ficha_provider.dart';
 import 'features/medical_records/presentation/providers/patient_provider.dart';
@@ -26,6 +25,7 @@ import 'features/medical_records/presentation/screens/fichas_screen.dart';
 import 'features/medical_records/presentation/screens/home_screen.dart';
 import 'features/medical_records/presentation/screens/mis_recetas_screen.dart';
 import 'features/medical_records/presentation/screens/patient_profile_screen.dart';
+import 'features/medical_records/triage/presentation/pages/triage_page.dart';
 import 'features/medical_records/presentation/session/prescription_session_coordinator.dart';
 
 import 'features/appointments/presentation/screens/mis_citas_screen.dart';
@@ -36,6 +36,9 @@ import 'features/payments/presentation/providers/payment_provider.dart';
 import 'features/payments/presentation/screens/payment_checkout_screen.dart';
 import 'features/payments/presentation/screens/payment_history_screen.dart';
 import 'features/teleconsulta/presentation/providers/teleconsulta_provider.dart';
+import 'features/teleconsulta/presentation/screens/teleconsultas_list_screen.dart';
+import 'features/teleconsulta/presentation/screens/sala_espera_screen.dart';
+import 'features/teleconsulta/presentation/screens/videollamada_movil_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -102,6 +105,7 @@ class TelemedicinaApp extends StatelessWidget {
           '/home': (context) => const HomeScreen(),
           '/patient-profile': (context) =>
               const PatientOnlyRoute(child: PatientProfileScreen()),
+          '/triage': (context) => TriagePage(),
           '/doctors': (context) => const DoctorCatalogScreen(),
           '/appointments': (context) => const AppointmentsScreen(),
           '/citas': (context) => const MisCitasScreen(),
@@ -131,7 +135,10 @@ class TelemedicinaApp extends StatelessWidget {
               child: PaymentCheckoutScreen(idCita: idCita),
             );
           },
-          '/communications': (context) => const CommunicationsScreen(),
+          '/communications': (context) => const TeleconsultasListScreen(),
+          '/teleconsultas': (context) => const TeleconsultasListScreen(),
+          '/teleconsulta/sala-espera': (context) => const SalaEsperaScreen(),
+          '/teleconsulta/videollamada': (context) => const VideollamadaMovilScreen(),
           '/analytics': (context) => const ReportsScreen(),
           '/ai-assistant': (context) => const AiAssistantScreen(),
         },

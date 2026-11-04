@@ -332,7 +332,8 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Ocurrió un error inesperado al registrar el usuario.';
+      print(e);
+      _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
       return false;
@@ -365,7 +366,8 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Ocurrió un error inesperado al solicitar el código.';
+      print(e);
+      _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
       return false;

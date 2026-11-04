@@ -261,6 +261,13 @@ class HomeScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context).pushNamed('/analytics'),
                   ),
                 _buildServiceCard(
+                  icon: Icons.emergency_outlined,
+                  title: 'Consultas IA',
+                  subtitle: 'Evaluación por IA',
+                  color: const Color(0xFFDC2626),
+                  onTap: () => Navigator.of(context).pushNamed('/triage'),
+                ),
+                _buildServiceCard(
                   icon: Icons.assignment_outlined,
                   title: 'Fichas Médicas',
                   subtitle: 'Emisión y turnos CU09',
