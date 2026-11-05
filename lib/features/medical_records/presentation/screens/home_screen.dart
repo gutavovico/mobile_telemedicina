@@ -261,6 +261,13 @@ class HomeScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context).pushNamed('/analytics'),
                   ),
                 _buildServiceCard(
+                  icon: Icons.emergency_outlined,
+                  title: 'Consultas IA',
+                  subtitle: 'Evaluación por IA',
+                  color: const Color(0xFFDC2626),
+                  onTap: () => Navigator.of(context).pushNamed('/triage'),
+                ),
+                _buildServiceCard(
                   icon: Icons.assignment_outlined,
                   title: 'Fichas Médicas',
                   subtitle: 'Emisión y turnos CU09',
@@ -287,7 +294,16 @@ class HomeScreen extends StatelessWidget {
                     title: 'Mis Tratamientos',
                     subtitle: 'Planes médicos y tomas CU17',
                     color: const Color(0xFF0284C7),
-                    onTap: () => Navigator.of(context).pushNamed('/tratamientos'),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed('/tratamientos'),
+                  ),
+                  // CU19: pago de citas/teleconsultas y comprobantes digitales.
+                  _buildServiceCard(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Mis pagos',
+                    subtitle: 'Paga tus citas y descarga comprobantes',
+                    color: const Color(0xFF635BFF),
+                    onTap: () => Navigator.of(context).pushNamed('/pagos'),
                   ),
                 ],
                 _buildServiceCard(
