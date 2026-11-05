@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/notifications/push_service.dart';
 import 'features/ai_assistant/presentation/screens/ai_assistant_screen.dart';
 import 'features/analytics/reportes/presentation/screens/reports_screen.dart';
 import 'features/appointments/presentation/controllers/doctor_controller.dart';
@@ -45,6 +46,9 @@ import 'features/teleconsulta/presentation/screens/videollamada_movil_screen.dar
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // CU19: push solo en la APK Android; en web no hace nada.
+  await PushService.instance.initialize();
 
   // Set status bar styling
   SystemChrome.setSystemUIOverlayStyle(

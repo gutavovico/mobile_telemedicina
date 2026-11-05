@@ -88,6 +88,10 @@ class ApiConfig {
   static String paymentReceiptUrl(int idPago) =>
       '$baseUrl/pagos/$idPago/comprobante/pdf';
 
+  // Notificaciones push del móvil (CU19)
+  static String get pushDevicesUrl => '$baseUrl/notificaciones/dispositivos';
+  static String pushDeviceUrl(int id) => '$baseUrl/notificaciones/dispositivos/$id';
+
   // Fila virtual y tiempos de espera (CU08)
   static String get liveQueueUrl => '$baseUrl/api/v1/cola';
   static String get miTurnoUrl => '$baseUrl/api/v1/cola/mi-turno';
