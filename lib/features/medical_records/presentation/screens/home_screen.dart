@@ -289,6 +289,14 @@ class HomeScreen extends StatelessWidget {
                     color: AppColors.secondary,
                     onTap: () => Navigator.of(context).pushNamed('/recetas'),
                   ),
+                  // CU19: pago de citas/teleconsultas y comprobantes digitales.
+                  _buildServiceCard(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Mis pagos',
+                    subtitle: 'Paga tus citas y descarga comprobantes',
+                    color: const Color(0xFF635BFF),
+                    onTap: () => Navigator.of(context).pushNamed('/pagos'),
+                  ),
                 ],
                 _buildServiceCard(
                   icon: Icons.calendar_month_rounded,

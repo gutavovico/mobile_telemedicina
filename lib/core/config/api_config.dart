@@ -65,6 +65,17 @@ class ApiConfig {
   static String get reportExportUrl => '$baseUrl/analytics/reportes/exportar';
   static String get reportInterpretUrl => '$baseUrl/analytics/reportes/interpretar';
   static String get reportTranscribeUrl => '$baseUrl/analytics/reportes/transcribir';
+  // Pagos de citas y teleconsultas + comprobantes (CU19)
+  static String get paymentsUrl => '$baseUrl/pagos';
+  static String get paymentsCheckoutUrl => '$baseUrl/pagos/checkout';
+  static String get paymentsPendingUrl => '$baseUrl/pagos/pendientes';
+  static String get paymentsMineUrl => '$baseUrl/pagos/mis-pagos';
+  static String get paymentsStateUrl => '$baseUrl/pagos/estado-pasarela';
+  static String paymentUrl(int idPago) => '$baseUrl/pagos/$idPago';
+  static String paymentSyncUrl(int idPago) => '$baseUrl/pagos/$idPago/sincronizar';
+  static String paymentSimulateUrl(int idPago) => '$baseUrl/pagos/$idPago/simular-pago';
+  static String paymentReceiptUrl(int idPago) => '$baseUrl/pagos/$idPago/comprobante/pdf';
+
   // Fila virtual y tiempos de espera (CU08)
   static String get liveQueueUrl => '$baseUrl/api/v1/cola';
   static String get miTurnoUrl => '$baseUrl/api/v1/cola/mi-turno';
