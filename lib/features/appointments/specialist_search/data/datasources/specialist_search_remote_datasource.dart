@@ -1,18 +1,34 @@
+import '../../../../../core/config/api_config.dart';
 import '../../../../../core/network/api_client.dart';
+import '../../../../../core/network/api_client_interface.dart';
 import '../models/specialist_search_models.dart';
 
 class SpecialistSearchRemoteDataSource {
-  final ApiClient _apiClient;
+  final ApiClientInterface _apiClient;
 
-  SpecialistSearchRemoteDataSource({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+  SpecialistSearchRemoteDataSource({ApiClientInterface? apiClient})
+    : _apiClient = apiClient ?? ApiClient();
+
+  Future<List<SpecialistSpecialtyOptionModel>> getSpecialties() async {
+    final response = await _apiClient.get(ApiConfig.specialtiesUrl);
+    if (response is List<dynamic>) {
+      return response
+          .map(
+            (item) => SpecialistSpecialtyOptionModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    }
+    return const [];
+  }
 
   Future<SpecialistSearchResponseModel> searchSpecialists(
     SpecialistSearchFilterParams filters,
   ) async {
     final queryParams = filters.toQueryParams();
     final queryString = Uri(queryParameters: queryParams).query;
-    final url = '/especialistas/buscar?$queryString';
+    final url = '${ApiConfig.specialistsUrl}/buscar?$queryString';
 
     final response = await _apiClient.get(url);
     if (response is Map<String, dynamic>) {
@@ -40,10 +56,10 @@ class SpecialistSearchRemoteDataSource {
       queryParams['id_servicio'] = idServicio.toString();
     }
     final queryString = Uri(queryParameters: queryParams).query;
-    final url = '/especialistas/$idMedico/disponibilidad?$queryString';
+    final url =
+        '${ApiConfig.specialistsUrl}/$idMedico/disponibilidad?$queryString';
 
     final response = await _apiClient.get(url);
     return SpecialistItemModel.fromJson(response as Map<String, dynamic>);
   }
 }
-

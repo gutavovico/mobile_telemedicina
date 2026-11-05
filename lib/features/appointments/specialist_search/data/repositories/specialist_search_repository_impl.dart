@@ -8,7 +8,13 @@ class SpecialistSearchRepositoryImpl implements SpecialistSearchRepository {
 
   SpecialistSearchRepositoryImpl({
     SpecialistSearchRemoteDataSource? remoteDataSource,
-  }) : _remoteDataSource = remoteDataSource ?? SpecialistSearchRemoteDataSource();
+  }) : _remoteDataSource =
+           remoteDataSource ?? SpecialistSearchRemoteDataSource();
+
+  @override
+  Future<List<SpecialistSpecialtyOptionEntity>> getSpecialties() {
+    return _remoteDataSource.getSpecialties();
+  }
 
   @override
   Future<SpecialistSearchResponseEntity> searchSpecialists(
@@ -32,4 +38,3 @@ class SpecialistSearchRepositoryImpl implements SpecialistSearchRepository {
     );
   }
 }
-

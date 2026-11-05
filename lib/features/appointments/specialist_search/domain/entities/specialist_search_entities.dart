@@ -1,28 +1,36 @@
 class SpecialistSpecialtyEntity {
   final int idEspecialidad;
   final String nombre;
+  final bool esPrincipal;
 
   const SpecialistSpecialtyEntity({
     required this.idEspecialidad,
     required this.nombre,
+    this.esPrincipal = false,
   });
 }
 
 class SpecialistServiceEntity {
   final int idServicio;
   final String nombre;
+  final String? descripcion;
   final String modalidad;
   final double costo;
   final String moneda;
   final int duracionMinutos;
+  final String horaInicio;
+  final String horaFin;
 
   const SpecialistServiceEntity({
     required this.idServicio,
     required this.nombre,
+    this.descripcion,
     required this.modalidad,
     required this.costo,
     required this.moneda,
     required this.duracionMinutos,
+    required this.horaInicio,
+    required this.horaFin,
   });
 }
 
@@ -53,6 +61,8 @@ class SpecialistEntity {
   final String nombreCompleto;
   final String? fotoUrl;
   final String matriculaProfesional;
+  final String? descripcionProfesional;
+  final String? experiencia;
   final List<SpecialistSpecialtyEntity> especialidades;
   final List<SpecialistServiceEntity> servicios;
   final List<SpecialistDayAvailabilityEntity> disponibilidad;
@@ -62,9 +72,21 @@ class SpecialistEntity {
     required this.nombreCompleto,
     this.fotoUrl,
     required this.matriculaProfesional,
+    this.descripcionProfesional,
+    this.experiencia,
     required this.especialidades,
     required this.servicios,
     required this.disponibilidad,
+  });
+}
+
+class SpecialistSpecialtyOptionEntity {
+  final int idEspecialidad;
+  final String nombre;
+
+  const SpecialistSpecialtyOptionEntity({
+    required this.idEspecialidad,
+    required this.nombre,
   });
 }
 
@@ -81,4 +103,3 @@ class SpecialistSearchResponseEntity {
     required this.items,
   });
 }
-

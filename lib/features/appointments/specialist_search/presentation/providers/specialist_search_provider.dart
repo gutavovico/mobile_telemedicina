@@ -10,16 +10,18 @@ class SpecialistSearchProvider extends ChangeNotifier {
 
   SpecialistSearchStatus _status = SpecialistSearchStatus.initial;
   SpecialistSearchResponseEntity? _response;
+  List<SpecialistSpecialtyOptionEntity> _specialties = [];
   String? _errorMessage;
   SpecialistSearchFilterParams? _currentFilters;
   int _latestRequestId = 0;
 
   SpecialistSearchProvider({required SpecialistSearchRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   SpecialistSearchStatus get status => _status;
   SpecialistSearchResponseEntity? get response => _response;
   List<SpecialistEntity> get items => _response?.items ?? [];
+  List<SpecialistSpecialtyOptionEntity> get specialties => _specialties;
   int get total => _response?.total ?? 0;
   String? get errorMessage => _errorMessage;
   SpecialistSearchFilterParams? get currentFilters => _currentFilters;
@@ -28,6 +30,15 @@ class SpecialistSearchProvider extends ChangeNotifier {
   bool get isLoading => _status == SpecialistSearchStatus.loading;
   bool get isSuccess => _status == SpecialistSearchStatus.success;
   bool get isError => _status == SpecialistSearchStatus.error;
+
+  Future<void> loadSpecialties() async {
+    try {
+      _specialties = await _repository.getSpecialties();
+      notifyListeners();
+    } catch (_) {
+      // El filtro de especialidad es opcional; la búsqueda principal no depende de él.
+    }
+  }
 
   Future<void> search(SpecialistSearchFilterParams filters) async {
     _currentFilters = filters;
@@ -68,4 +79,3 @@ class SpecialistSearchProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-

@@ -6,10 +6,7 @@ import '../providers/specialist_search_provider.dart';
 class SpecialistSearchScreen extends StatefulWidget {
   final SpecialistSearchProvider provider;
 
-  const SpecialistSearchScreen({
-    super.key,
-    required this.provider,
-  });
+  const SpecialistSearchScreen({super.key, required this.provider});
 
   @override
   State<SpecialistSearchScreen> createState() => _SpecialistSearchScreenState();
@@ -20,12 +17,14 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
   String _modalidad = 'AMBAS';
-  DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now().add(const Duration(days: 7));
+  int? _idEspecialidad;
+  final DateTime _startDate = DateTime.now();
+  final DateTime _endDate = DateTime.now().add(const Duration(days: 7));
 
   @override
   void initState() {
     super.initState();
+    widget.provider.loadSpecialties();
     _triggerSearch();
   }
 
@@ -46,7 +45,10 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
 
   void _triggerSearch() {
     final filters = SpecialistSearchFilterParams(
-      nombre: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
+      nombre: _nameController.text.trim().isNotEmpty
+          ? _nameController.text.trim()
+          : null,
+      idEspecialidad: _idEspecialidad,
       modalidad: _modalidad,
       costoMin: double.tryParse(_minPriceController.text.trim()),
       costoMax: double.tryParse(_maxPriceController.text.trim()),
@@ -92,25 +94,64 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
               hintText: 'Buscar por nombre o apellido...',
               prefixIcon: const Icon(Icons.search),
               isDense: true,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onSubmitted: (_) => _triggerSearch(),
           ),
           const SizedBox(height: 8),
+          if (widget.provider.specialties.isNotEmpty) ...[
+            DropdownButtonFormField<int?>(
+              initialValue: _idEspecialidad,
+              decoration: InputDecoration(
+                labelText: 'Especialidad',
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('Todas las especialidades'),
+                ),
+                ...widget.provider.specialties.map(
+                  (specialty) => DropdownMenuItem<int?>(
+                    value: specialty.idEspecialidad,
+                    child: Text(specialty.nombre),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() => _idEspecialidad = value);
+                _triggerSearch();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _modalidad,
+                  initialValue: _modalidad,
                   decoration: InputDecoration(
                     labelText: 'Modalidad',
                     isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   items: const [
                     DropdownMenuItem(value: 'AMBAS', child: Text('Todas')),
-                    DropdownMenuItem(value: 'TELECONSULTA', child: Text('Teleconsulta')),
-                    DropdownMenuItem(value: 'PRESENCIAL', child: Text('Presencial')),
+                    DropdownMenuItem(
+                      value: 'TELECONSULTA',
+                      child: Text('Teleconsulta'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'PRESENCIAL',
+                      child: Text('Presencial'),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) {
@@ -219,11 +260,18 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                 CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.blue.shade100,
-                  backgroundImage: item.fotoUrl != null ? NetworkImage(item.fotoUrl!) : null,
+                  backgroundImage: item.fotoUrl != null
+                      ? NetworkImage(item.fotoUrl!)
+                      : null,
                   child: item.fotoUrl == null
                       ? Text(
-                          item.nombreCompleto.isNotEmpty ? item.nombreCompleto[0] : 'D',
-                          style: TextStyle(fontSize: 20, color: Colors.blue.shade800),
+                          item.nombreCompleto.isNotEmpty
+                              ? item.nombreCompleto[0]
+                              : 'D',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.blue.shade800,
+                          ),
                         )
                       : null,
                 ),
@@ -234,20 +282,35 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                     children: [
                       Text(
                         item.nombreCompleto,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         'Matrícula: ${item.matriculaProfesional}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       Wrap(
                         spacing: 4,
+                        runSpacing: 2,
                         children: item.especialidades
                             .map(
                               (e) => Chip(
-                                label: Text(e.nombre, style: const TextStyle(fontSize: 10)),
+                                label: Text(
+                                  e.esPrincipal
+                                      ? '${e.nombre} · Principal'
+                                      : e.nombre,
+                                  style: const TextStyle(fontSize: 10),
+                                ),
                                 visualDensity: VisualDensity.compact,
                                 padding: EdgeInsets.zero,
+                                backgroundColor: e.esPrincipal
+                                    ? Colors.blue.shade100
+                                    : null,
                               ),
                             )
                             .toList(),
@@ -257,23 +320,105 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                 ),
               ],
             ),
+            if (item.descripcionProfesional != null ||
+                item.experiencia != null) ...[
+              const Divider(),
+              if (item.descripcionProfesional != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    item.descripcionProfesional!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.35,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              if (item.experiencia != null)
+                Text(
+                  'Experiencia: ${item.experiencia}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+            ],
             const Divider(),
             if (item.servicios.isNotEmpty) ...[
               const Text(
-                'Servicios disponibles:',
+                'Servicios ofrecidos:',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               ...item.servicios.map(
-                (s) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                (s) => Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${s.nombre} (${s.modalidad})', style: const TextStyle(fontSize: 12)),
-                      Text(
-                        '${s.costo.toStringAsFixed(2)} ${s.moneda}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              s.nombre,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${s.costo.toStringAsFixed(2)} ${s.moneda}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (s.descripcion != null &&
+                          s.descripcion!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          s.descripcion!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 4,
+                        children: [
+                          _ServiceMetadata(
+                            icon: Icons.videocam_outlined,
+                            label: _modalidadLabel(s.modalidad),
+                          ),
+                          _ServiceMetadata(
+                            icon: Icons.timer_outlined,
+                            label: '${s.duracionMinutos} min',
+                          ),
+                          if (s.horaInicio.isNotEmpty && s.horaFin.isNotEmpty)
+                            _ServiceMetadata(
+                              icon: Icons.schedule_outlined,
+                              label:
+                                  '${_formatTime(s.horaInicio)} - ${_formatTime(s.horaFin)}',
+                            ),
+                        ],
                       ),
                     ],
                   ),
@@ -293,6 +438,21 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
         ),
       ),
     );
+  }
+
+  String _modalidadLabel(String modalidad) {
+    switch (modalidad.toUpperCase()) {
+      case 'TELECONSULTA':
+        return 'Teleconsulta';
+      case 'PRESENCIAL':
+        return 'Presencial';
+      default:
+        return modalidad;
+    }
+  }
+
+  String _formatTime(String value) {
+    return value.length >= 5 ? value.substring(0, 5) : value;
   }
 
   void _openAvailability(SpecialistEntity item) {
@@ -318,7 +478,10 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                     children: [
                       Text(
                         'Disponibilidad: ${item.nombreCompleto}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -329,7 +492,11 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                   const Divider(),
                   Expanded(
                     child: item.disponibilidad.isEmpty
-                        ? const Center(child: Text('No hay horarios disponibles en este rango.'))
+                        ? const Center(
+                            child: Text(
+                              'No hay horarios disponibles en este rango.',
+                            ),
+                          )
                         : ListView.builder(
                             controller: scrollController,
                             itemCount: item.disponibilidad.length,
@@ -339,7 +506,9 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8.0,
+                                    ),
                                     child: Text(
                                       dia.fecha,
                                       style: const TextStyle(
@@ -350,7 +519,10 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                                     ),
                                   ),
                                   if (dia.slots.isEmpty)
-                                    const Text('Sin slots para este día', style: TextStyle(color: Colors.grey))
+                                    const Text(
+                                      'Sin slots para este día',
+                                      style: TextStyle(color: Colors.grey),
+                                    )
                                   else
                                     Wrap(
                                       spacing: 8,
@@ -371,9 +543,13 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
                                             ),
                                           ),
                                           avatar: Icon(
-                                            s.disponible ? Icons.check_circle : Icons.block,
+                                            s.disponible
+                                                ? Icons.check_circle
+                                                : Icons.block,
                                             size: 14,
-                                            color: s.disponible ? Colors.green : Colors.grey,
+                                            color: s.disponible
+                                                ? Colors.green
+                                                : Colors.grey,
                                           ),
                                         );
                                       }).toList(),
@@ -394,3 +570,24 @@ class _SpecialistSearchScreenState extends State<SpecialistSearchScreen> {
   }
 }
 
+class _ServiceMetadata extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _ServiceMetadata({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: Colors.grey.shade600),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+        ),
+      ],
+    );
+  }
+}

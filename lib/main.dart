@@ -8,6 +8,9 @@ import 'features/appointments/presentation/controllers/doctor_controller.dart';
 import 'features/appointments/presentation/providers/appointment_provider.dart';
 import 'features/appointments/presentation/screens/appointments_screen.dart';
 import 'features/appointments/presentation/screens/doctor_catalog_screen.dart';
+import 'features/appointments/specialist_search/data/repositories/specialist_search_repository_impl.dart';
+import 'features/appointments/specialist_search/presentation/providers/specialist_search_provider.dart';
+import 'features/appointments/specialist_search/presentation/screens/specialist_search_screen.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/presentation/screens/forgot_password_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
@@ -65,6 +68,11 @@ class TelemedicinaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => PatientProvider()),
         ChangeNotifierProvider(create: (_) => DoctorController()),
+        ChangeNotifierProvider(
+          create: (_) => SpecialistSearchProvider(
+            repository: SpecialistSearchRepositoryImpl(),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => TeleconsultaProvider()),
         ChangeNotifierProvider(create: (_) => ColaProvider()),
@@ -107,6 +115,9 @@ class TelemedicinaApp extends StatelessWidget {
               const PatientOnlyRoute(child: PatientProfileScreen()),
           '/triage': (context) => TriagePage(),
           '/doctors': (context) => const DoctorCatalogScreen(),
+          '/especialistas': (context) => SpecialistSearchScreen(
+            provider: context.read<SpecialistSearchProvider>(),
+          ),
           '/appointments': (context) => const AppointmentsScreen(),
           '/citas': (context) => const MisCitasScreen(),
           '/mis-citas': (context) => const MisCitasScreen(),
@@ -138,7 +149,8 @@ class TelemedicinaApp extends StatelessWidget {
           '/communications': (context) => const TeleconsultasListScreen(),
           '/teleconsultas': (context) => const TeleconsultasListScreen(),
           '/teleconsulta/sala-espera': (context) => const SalaEsperaScreen(),
-          '/teleconsulta/videollamada': (context) => const VideollamadaMovilScreen(),
+          '/teleconsulta/videollamada': (context) =>
+              const VideollamadaMovilScreen(),
           '/analytics': (context) => const ReportsScreen(),
           '/ai-assistant': (context) => const AiAssistantScreen(),
         },
