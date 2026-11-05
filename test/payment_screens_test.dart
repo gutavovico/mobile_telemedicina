@@ -54,9 +54,6 @@ class _PaymentProviderFake extends PaymentProvider {
   Future<PaymentModel?> simulatePayment(int idPago) async => simulatedResult;
 
   @override
-  Future<Uint8List?> downloadQr(int idPago) async => null;
-
-  @override
   Future<Uint8List?> downloadReceipt(int idPago) async {
     receiptRequests.add(idPago);
     return Uint8List.fromList(const [1, 2, 3]);
@@ -171,7 +168,7 @@ void main() {
   });
 
   group('CU19 pantalla Pago en línea (móvil)', () {
-    testWidgets('muestra el resumen, el botón de Stripe y el QR', (tester) async {
+    testWidgets('muestra el resumen y el botón de Stripe', (tester) async {
       await _montar(
         tester,
         const PaymentCheckoutScreen(idCita: 38),
@@ -184,8 +181,7 @@ void main() {
       expect(find.text('Bs. 120.50 BOB'), findsOneWidget);
       expect(find.text('Pagar con tarjeta en Stripe'), findsOneWidget);
       expect(find.text('Ya pagué, verificar estado'), findsOneWidget);
-      expect(find.text('Pago con QR'), findsOneWidget);
-      expect(find.text('QR no disponible'), findsOneWidget);
+      expect(find.text('Pago con QR'), findsNothing);
     });
 
     testWidgets('en modo demostración confirma el pago y muestra el comprobante', (tester) async {

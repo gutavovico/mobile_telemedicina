@@ -75,7 +75,6 @@ class ApiConfig {
   static String paymentSyncUrl(int idPago) => '$baseUrl/pagos/$idPago/sincronizar';
   static String paymentSimulateUrl(int idPago) => '$baseUrl/pagos/$idPago/simular-pago';
   static String paymentReceiptUrl(int idPago) => '$baseUrl/pagos/$idPago/comprobante/pdf';
-  static String paymentQrUrl(int idPago) => '$baseUrl/pagos/$idPago/qr';
 
   // Fila virtual y tiempos de espera (CU08)
   static String get liveQueueUrl => '$baseUrl/api/v1/cola';

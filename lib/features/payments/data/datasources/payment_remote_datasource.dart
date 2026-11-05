@@ -59,8 +59,4 @@ class PaymentRemoteDataSource {
   Future<Uint8List> downloadReceipt(int idPago) {
     return _apiClient.downloadBytes(ApiConfig.paymentReceiptUrl(idPago));
   }
-
-  Future<Uint8List> downloadQr(int idPago) {
-    return _apiClient.downloadBytes(ApiConfig.paymentQrUrl(idPago));
-  }
 }

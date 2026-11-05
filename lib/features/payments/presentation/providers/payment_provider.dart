@@ -108,14 +108,6 @@ class PaymentProvider with ChangeNotifier {
     }
   }
 
-  Future<Uint8List?> downloadQr(int idPago) async {
-    try {
-      return await _dataSource.downloadQr(idPago);
-    } catch (_) {
-      return null;
-    }
-  }
-
   void _reemplazarPago(PaymentModel pago) {
     _payments = [
       pago,

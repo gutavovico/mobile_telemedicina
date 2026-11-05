@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -26,7 +24,6 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen>
   bool _inicializado = false;
   CheckoutModel? _checkout;
   PaymentModel? _pagoActual;
-  Future<Uint8List?>? _qrFuture;
   bool _descargando = false;
 
   @override
@@ -84,7 +81,6 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen>
     setState(() {
       _checkout = checkout;
       _pagoActual = checkout.estaPagado ? checkout : null;
-      _qrFuture = provider.downloadQr(checkout.idPago);
     });
   }
 
@@ -181,9 +177,12 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        title: const Text('Pago en línea'),
+        backgroundColor: AppColors.surface,
+        foregroundColor: Colors.black,
+        title: const Text(
+          'Pago en línea',
+          style: TextStyle(color: Colors.black),
+        ),
       ),
       body: SafeArea(
         child: provider.isLoading && _checkout == null
@@ -247,8 +246,6 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen>
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
-            const SizedBox(height: 16),
-            _buildQr(checkout),
           ],
         ],
       ),
@@ -359,61 +356,6 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen>
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle: AppTypography.button.copyWith(fontSize: 15),
-      ),
-    );
-  }
-
-  Widget _buildQr(CheckoutModel checkout) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Pago con QR',
-            style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Escanea el código con otro dispositivo para abrir la pasarela de pago.',
-            textAlign: TextAlign.center,
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 12),
-          FutureBuilder<Uint8List?>(
-            future: _qrFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 180,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              final bytes = snapshot.data;
-              if (bytes == null) {
-                return const SizedBox(
-                  height: 120,
-                  child: Center(
-                    child: Text('QR no disponible', style: TextStyle(color: AppColors.textMuted)),
-                  ),
-                );
-              }
-              return Image.memory(bytes, width: 180, height: 180);
-            },
-          ),
-          if (checkout.qrPayload != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              checkout.qrPayload!,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-            ),
-          ],
-        ],
       ),
     );
   }

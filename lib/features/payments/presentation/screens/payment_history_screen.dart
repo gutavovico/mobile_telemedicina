@@ -61,9 +61,12 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        title: const Text('Mis pagos'),
+        backgroundColor: AppColors.surface,
+        foregroundColor: Colors.black,
+        title: const Text(
+          'Mis pagos',
+          style: TextStyle(color: Colors.black),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _recargar,
