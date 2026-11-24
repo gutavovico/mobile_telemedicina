@@ -49,6 +49,13 @@ class NotificacionNavigationHandler {
         r == 'LABORATORIO') {
       return '/mis-documentos';
     }
+    // CU07: ofrecimiento, confirmación y rechazo de turnos de lista de espera.
+    if (t == 'TURNO_REASIGNADO' ||
+        t == 'TURNO_CONFIRMADO' ||
+        t == 'TURNO_RECHAZADO' ||
+        r == 'LISTA_ESPERA') {
+      return '/lista-espera';
+    }
     if (rol == 'medico' || rol == 'doctor') {
       return '/appointments';
     }

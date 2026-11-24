@@ -172,6 +172,30 @@ void main() {
       expect(find.byKey(const Key('notif_unread_dot_1')), findsNothing);
     });
 
+    test('Notificaciones CU07 abren la lista de espera', () {
+      for (final tipo in [
+        'TURNO_REASIGNADO',
+        'TURNO_CONFIRMADO',
+        'TURNO_RECHAZADO',
+      ]) {
+        expect(
+          NotificacionNavigationHandler.resolverRuta(
+            tipo: tipo,
+            rolUsuario: 'paciente',
+          ),
+          '/lista-espera',
+        );
+      }
+      expect(
+        NotificacionNavigationHandler.resolverRuta(
+          tipo: 'SISTEMA',
+          recursoTipo: 'LISTA_ESPERA',
+          rolUsuario: 'paciente',
+        ),
+        '/lista-espera',
+      );
+    });
+
     testWidgets('NotificacionNavigationHandler exige sesión activa y redirige a /login',
         (tester) async {
       NotificacionNavigationHandler.limpiarPendiente();

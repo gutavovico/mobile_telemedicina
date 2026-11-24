@@ -25,8 +25,10 @@ class PushService {
   PushService._();
   static final PushService instance = PushService._();
 
-  static const String _channelId = 'cu19_pagos';
-  static const String _channelName = 'Pagos';
+  static const String _channelId = 'telemedicina_push_v1';
+  static const String _channelName = 'Notificaciones de Telemedicina';
+  static const String _channelDescription =
+      'Avisos de lista de espera, citas y pagos.';
   static const String _deviceIdKey = 'cu19_push_device_id';
 
   final FlutterLocalNotificationsPlugin _local =
@@ -75,14 +77,14 @@ class PushService {
       settings: settings,
       onDidReceiveNotificationResponse: (response) {
         if (response.payload != null && response.payload!.isNotEmpty) {
-          prescriptionNavigatorKey.currentState?.pushNamed('/pagos');
+          _openFromPayload(response.payload!);
         }
       },
     );
     const channel = AndroidNotificationChannel(
       _channelId,
       _channelName,
-      description: 'Avisos de pagos confirmados',
+      description: _channelDescription,
       importance: Importance.high,
     );
     await _local
@@ -98,7 +100,7 @@ class PushService {
       android: AndroidNotificationDetails(
         _channelId,
         _channelName,
-        channelDescription: 'Avisos de pagos confirmados',
+        channelDescription: _channelDescription,
         importance: Importance.high,
         priority: Priority.high,
       ),
@@ -113,10 +115,36 @@ class PushService {
   }
 
   void _openFromMessage(RemoteMessage message) {
-    final tipo = message.data['tipo'];
-    if (tipo == null || tipo == 'PAGO_CONFIRMADO') {
-      prescriptionNavigatorKey.currentState?.pushNamed('/pagos');
+    _abrirRutaSegunTipo(message.data);
+  }
+
+  void _openFromPayload(String payload) {
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map) {
+        _abrirRutaSegunTipo(Map<dynamic, dynamic>.from(decoded));
+        return;
+      }
+    } catch (_) {}
+    prescriptionNavigatorKey.currentState?.pushNamed('/mis-citas');
+  }
+
+  void _abrirRutaSegunTipo(Map<dynamic, dynamic> datos) {
+    final tipo = (datos['tipo'] ?? '').toString().toUpperCase();
+    final recursoTipo = (datos['recurso_tipo'] ?? '').toString().toUpperCase();
+
+    if (tipo == 'TURNO_REASIGNADO' ||
+        tipo == 'TURNO_CONFIRMADO' ||
+        tipo == 'TURNO_RECHAZADO' ||
+        recursoTipo == 'LISTA_ESPERA') {
+      prescriptionNavigatorKey.currentState?.pushNamed('/lista-espera');
+      return;
     }
+    if (tipo == 'PAGO_CONFIRMADO') {
+      prescriptionNavigatorKey.currentState?.pushNamed('/pagos');
+      return;
+    }
+    prescriptionNavigatorKey.currentState?.pushNamed('/mis-citas');
   }
 
   /// Registra el token FCM del dispositivo en el backend.
